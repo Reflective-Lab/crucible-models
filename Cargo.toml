@@ -1,0 +1,67 @@
+[workspace]
+resolver = "2"
+members = ["crates/crucible"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94.0"
+license = "MIT"
+repository = "https://github.com/Reflective-Lab/crucible-models"
+
+[workspace.dependencies]
+# Converge platform contracts
+converge-pack = "3.8.1"
+converge-optimization = "3.8.1"
+converge-kernel = "3.8.1"
+
+# ML training framework
+burn = { version = "0.20.0", features = ["ndarray", "train"] }
+ndarray = "0.17.2"
+
+# Common
+anyhow = "1"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+rand = "0.8"
+tokio = { version = "1.48", features = ["full", "macros", "sync"] }
+tracing = "0.1"
+
+# Dev
+tempfile = "3"
+trybuild = "1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+too_many_lines = "allow"
+similar_names = "allow"
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+cast_lossless = "allow"
+cast_precision_loss = "allow"
+must_use_candidate = "allow"
+doc_markdown = "allow"
+uninlined_format_args = "allow"
+needless_pass_by_value = "allow"
+unused_self = "allow"
+wildcard_imports = "allow"
+default_trait_access = "allow"
+struct_field_names = "allow"
+unreadable_literal = "allow"
+manual_let_else = "allow"
+items_after_statements = "allow"
+return_self_not_must_use = "allow"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

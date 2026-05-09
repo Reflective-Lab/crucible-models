@@ -1,0 +1,24 @@
+[package]
+name = "converge-crucible-models"
+description = "Trained-model packs for the Converge Engine — Decision Trees, Random Forests, SVMs, and ANFIS via Burn."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+converge-pack.workspace = true
+converge-optimization.workspace = true
+burn.workspace = true
+ndarray.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rand.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

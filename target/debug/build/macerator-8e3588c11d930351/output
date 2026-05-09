@@ -1,0 +1,8 @@
+cargo::rustc-check-cfg=cfg(avx512)
+cargo::rustc-check-cfg=cfg(avx512_nightly)
+cargo:rustc-check-cfg=cfg(x86)
+cargo:rustc-check-cfg=cfg(fp16)
+cargo:rustc-check-cfg=cfg(aarch64)
+cargo:rustc-cfg=aarch64
+cargo:rustc-check-cfg=cfg(wasm32)
+cargo:rustc-check-cfg=cfg(loong64)

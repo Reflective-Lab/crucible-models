@@ -1,0 +1,11 @@
+/Users/kpernyer/dev/reflective-stack/mosaic-extensions/crucible-models/target/debug/deps/burn_ir-7f76bab6f5bd6fa3.d: /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/lib.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/backend.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/builder.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/handle.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/operation.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/scalar.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/tensor.rs
+
+/Users/kpernyer/dev/reflective-stack/mosaic-extensions/crucible-models/target/debug/deps/libburn_ir-7f76bab6f5bd6fa3.rmeta: /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/lib.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/backend.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/builder.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/handle.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/operation.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/scalar.rs /Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/tensor.rs
+
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/lib.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/backend.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/builder.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/handle.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/operation.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/scalar.rs:
+/Users/kpernyer/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/burn-ir-0.20.1/src/tensor.rs:
