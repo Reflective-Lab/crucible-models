@@ -3,12 +3,23 @@
 
 //! # crucible-models
 //!
-//! Trained-model packs for the Converge Engine.
+//! Trained-model packs and the training pipeline for the Converge Engine.
 //!
-//! Unlike `prism-analytics` (pure inference, no training pipeline),
-//! every model here is learned from data using Burn as the training
-//! framework.  Parameters are stored as trained artifacts, not
+//! Unlike `prism-analytics` (closed-form, hand-authored inference), every
+//! model under `crucible-models` is learned from data using Burn as the
+//! training framework. Parameters are stored as trained artifacts, not
 //! hand-authored rules.
+//!
+//! ## Training pipeline
+//!
+//! The training pipeline lives in [`training`] and the supporting data
+//! plumbing in [`ingest`] and [`storage`]. The pipeline is composed of
+//! Suggestor-shaped agents (`DatasetAgent`, `DataValidationAgent`,
+//! `FeatureEngineeringAgent`, `HyperparameterSearchAgent`,
+//! `ModelTrainingAgent`, `ModelEvaluationAgent`, `ModelRegistryAgent`,
+//! `MonitoringAgent`, `DeploymentAgent`, `SampleInferenceAgent`) that
+//! today run from a binary entrypoint and can be lifted into a
+//! Formation when a real retrain trigger pulls.
 //!
 //! ## Planned packs
 //!
@@ -18,6 +29,18 @@
 //! - `neuro_fuzzy` — ANFIS (Adaptive Neuro-Fuzzy Inference System) via Burn
 
 pub mod ensembles;
+pub mod ingest;
 pub mod neuro_fuzzy;
+pub mod provenance;
+#[cfg(feature = "storage")]
+pub mod storage;
 pub mod svm;
+pub mod training;
 pub mod trees;
+
+pub use provenance::{CRUCIBLE_PROVENANCE, ProvenanceSource, UnknownProvenanceSource};
+pub use training::{
+    DataValidationAgent, DatasetAgent, DeploymentAgent, FeatureEngineeringAgent,
+    HyperparameterSearchAgent, ModelEvaluationAgent, ModelRegistryAgent, ModelTrainingAgent,
+    MonitoringAgent, SampleInferenceAgent,
+};

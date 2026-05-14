@@ -3,6 +3,23 @@ source: human
 ---
 # Session Log
 
+## 2026-05-14
+
+- Lifted the training pipeline and supporting data plumbing from
+  `prism-analytics` into crucible: `ingest`, `storage` (feature-gated), and
+  `training` modules including `DatasetAgent`, `DataValidationAgent`,
+  `FeatureEngineeringAgent`, `HyperparameterSearchAgent`,
+  `ModelTrainingAgent`, `ModelEvaluationAgent`, `ModelRegistryAgent`,
+  `MonitoringAgent`, `DeploymentAgent`, `SampleInferenceAgent`.
+- Added `crucible::provenance` with typed `ProvenanceSource::Crucible`,
+  `CRUCIBLE_PROVENANCE`, and the `suggestor_span` helper emitting
+  `crucible.suggestor.execute` spans. Matches the workspace Suggestor
+  Contract.
+- Added workspace deps: polars, calamine, converge-storage, proptest,
+  reqwest, bincode. Added crate features `storage` and `excel`.
+- Lifted training tests come over green: 45 tests pass; cargo fmt, cargo
+  clippy `-D warnings`, and `cargo check --features storage` all clean.
+
 ## 2026-05-09
 
 - Project scaffolded from the prism-analytics/crucible boundary decision.
