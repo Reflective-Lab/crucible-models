@@ -29,6 +29,7 @@
 //! - `neuro_fuzzy` — ANFIS (Adaptive Neuro-Fuzzy Inference System) via Burn
 
 pub mod ensembles;
+pub mod fixtures;
 pub mod ingest;
 pub mod model;
 pub mod neuro_fuzzy;

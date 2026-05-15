@@ -1,11 +1,15 @@
 [package]
 name = "converge-crucible-models"
-description = "Trained-model packs for the Converge Engine — Decision Trees, Random Forests, SVMs, and ANFIS via Burn."
+description = "Trained-model packs for the Converge Engine — Decision Trees, Random Forests, SVMs (linfa) and ANFIS (Burn)."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+
+[lib]
+name = "crucible"
+path = "src/lib.rs"
 
 [dependencies]
 converge-pack.workspace = true
