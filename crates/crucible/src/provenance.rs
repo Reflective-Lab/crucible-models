@@ -1,98 +1,47 @@
-//! Typed provenance source vocabulary for extension-originated facts.
+//! Crucible's `ProvenanceSource` marker.
+//!
+//! Migrated from the per-crate `ProvenanceSource` enum (which carried
+//! one variant per workspace extension, duplicated across every
+//! fact-emitting crate) to a tiny zero-sized type that implements
+//! [`converge_pack::ProvenanceSource`]. The const surface is
+//! unchanged: `CRUCIBLE_PROVENANCE.proposed_fact(...)` reads exactly
+//! the same at call sites.
+//!
+//! The `converge-core` engine now emits a uniform `suggestor.execute`
+//! tracing span automatically around every `Suggestor::execute` call,
+//! with the suggestor name + provenance string + dependency keys as
+//! fields. Suggestors override `Suggestor::provenance()` to return
+//! `CRUCIBLE_PROVENANCE.as_str()` so the engine's span carries the
+//! right origin without each crate hand-rolling its own span helper.
+//!
+//! A `pub(crate)` `suggestor_span` legacy helper remains for the
+//! training-pipeline agents in [`crate::training`] until their per-agent
+//! migration to the engine span lands; it is intentionally not exposed
+//! on the public surface.
 
-use std::{error::Error, fmt, str::FromStr};
-
-use converge_pack::{ContextKey, FactPayload, ProposalId, ProposedFact};
-use serde::{Deserialize, Serialize};
+use converge_pack::{ContextKey, ProvenanceSource};
 use tracing::info_span;
 
-pub const CRUCIBLE_PROVENANCE: ProvenanceSource = ProvenanceSource::Crucible;
+/// Marker type identifying crucible-emitted facts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Crucible;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ProvenanceSource {
-    Arbiter,
-    Atelier,
-    Crucible,
-    Embassy,
-    Ferrox,
-    Manifold,
-    Mnemos,
-    Prism,
-}
-
-impl ProvenanceSource {
-    pub const ALL: [Self; 8] = [
-        Self::Arbiter,
-        Self::Atelier,
-        Self::Crucible,
-        Self::Embassy,
-        Self::Ferrox,
-        Self::Manifold,
-        Self::Mnemos,
-        Self::Prism,
-    ];
-
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Arbiter => "arbiter",
-            Self::Atelier => "atelier",
-            Self::Crucible => "crucible",
-            Self::Embassy => "embassy",
-            Self::Ferrox => "ferrox",
-            Self::Manifold => "manifold",
-            Self::Mnemos => "mnemos",
-            Self::Prism => "prism",
-        }
-    }
-
-    #[must_use]
-    pub fn proposed_fact(
-        self,
-        key: ContextKey,
-        id: impl Into<ProposalId>,
-        payload: impl FactPayload + PartialEq,
-    ) -> ProposedFact {
-        ProposedFact::new(key, id, payload, self.as_str())
+impl ProvenanceSource for Crucible {
+    fn as_str(&self) -> &'static str {
+        "crucible"
     }
 }
 
-impl fmt::Display for ProvenanceSource {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
+/// Canonical provenance constant for crucible. Use it to construct
+/// proposals: `CRUCIBLE_PROVENANCE.proposed_fact(key, id, payload)`.
+pub const CRUCIBLE_PROVENANCE: Crucible = Crucible;
 
-impl FromStr for ProvenanceSource {
-    type Err = UnknownProvenanceSource;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value {
-            "arbiter" => Ok(Self::Arbiter),
-            "atelier" => Ok(Self::Atelier),
-            "crucible" => Ok(Self::Crucible),
-            "embassy" => Ok(Self::Embassy),
-            "ferrox" => Ok(Self::Ferrox),
-            "manifold" => Ok(Self::Manifold),
-            "mnemos" => Ok(Self::Mnemos),
-            "prism" => Ok(Self::Prism),
-            other => Err(UnknownProvenanceSource(other.to_string())),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UnknownProvenanceSource(String);
-
-impl fmt::Display for UnknownProvenanceSource {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "unknown provenance source: {}", self.0)
-    }
-}
-
-impl Error for UnknownProvenanceSource {}
-
+/// Legacy per-crate suggestor span helper.
+///
+/// Internal-only. The engine emits the canonical `suggestor.execute`
+/// span automatically; this helper exists only so the training-pipeline
+/// agents in [`crate::training`] keep compiling until their per-agent
+/// migration to the engine span lands. New code does not call this.
 pub(crate) fn suggestor_span(
     name: &str,
     input_key: ContextKey,
@@ -115,22 +64,17 @@ mod tests {
     use converge_pack::TextPayload;
 
     #[test]
-    fn provenance_sources_round_trip_through_strings() {
-        for source in ProvenanceSource::ALL {
-            let parsed: ProvenanceSource = source.as_str().parse().unwrap();
-            assert_eq!(parsed, source);
-            assert_eq!(source.to_string(), source.as_str());
-        }
+    fn provenance_string_is_stable() {
+        assert_eq!(CRUCIBLE_PROVENANCE.as_str(), "crucible");
     }
 
     #[test]
-    fn proposed_fact_uses_canonical_source_string() {
+    fn proposed_fact_carries_crucible_provenance() {
         let fact = CRUCIBLE_PROVENANCE.proposed_fact(
             ContextKey::Diagnostic,
             "diagnostic",
             TextPayload::new("content"),
         );
-
         assert_eq!(fact.provenance(), "crucible");
     }
 }

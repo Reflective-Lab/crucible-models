@@ -44,7 +44,7 @@ pub mod types;
 
 pub use ensembles::{RandomForestConfig, RandomForestModel};
 pub use model::ClassifierModel;
-pub use provenance::{CRUCIBLE_PROVENANCE, ProvenanceSource, UnknownProvenanceSource};
+pub use provenance::{CRUCIBLE_PROVENANCE, Crucible};
 pub use suggestor::ClassifierSuggestor;
 pub use training::{
     DataValidationAgent, DatasetAgent, DeploymentAgent, FeatureEngineeringAgent,

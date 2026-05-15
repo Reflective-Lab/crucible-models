@@ -3,7 +3,7 @@
 use anyhow::{Context as _, Result, anyhow};
 use converge_pack::{
     AgentEffect, Context, ContextKey, DiagnosticPayload, FactPayload, ProposalId, ProposedFact,
-    Suggestor,
+    ProvenanceSource, Suggestor,
 };
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};

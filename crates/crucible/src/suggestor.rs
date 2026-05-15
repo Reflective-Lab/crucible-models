@@ -18,12 +18,14 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use converge_pack::{AgentEffect, Context, ContextKey, FactPayload, ProposalId, Suggestor};
+use converge_pack::{
+    AgentEffect, Context, ContextKey, FactPayload, ProposalId, ProvenanceSource, Suggestor,
+};
 use ndarray::Array2;
 use tracing::warn;
 
 use crate::model::ClassifierModel;
-use crate::provenance::{CRUCIBLE_PROVENANCE, suggestor_span};
+use crate::provenance::CRUCIBLE_PROVENANCE;
 use crate::types::{ClassPredictionPayload, ClassificationFeaturesPayload};
 
 /// Generic inference Suggestor for any [`ClassifierModel`].
@@ -78,16 +80,17 @@ impl<M: ClassifierModel + Send + Sync + 'static> Suggestor for ClassifierSuggest
             .any(|fact| fact.payload::<ClassificationFeaturesPayload>().is_some())
     }
 
-    async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let inputs = ctx.get(self.input_key);
-        let _span = suggestor_span(
-            self.suggestor_name,
-            self.input_key,
-            self.output_key,
-            inputs.len(),
-        )
-        .entered();
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
 
+    async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
+        // No local span: `converge-core`'s engine emits the
+        // `suggestor.execute` span automatically, with this
+        // Suggestor's `name()`, `provenance()`, and `dependencies()`
+        // as fields. Replaces the previous per-crate `suggestor_span`
+        // helper.
+        let inputs = ctx.get(self.input_key);
         let mut proposals = Vec::new();
 
         for fact in inputs {
