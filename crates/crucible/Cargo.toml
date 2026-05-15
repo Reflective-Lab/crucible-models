@@ -11,7 +11,10 @@ repository.workspace = true
 converge-pack.workspace = true
 converge-optimization.workspace = true
 burn.workspace = true
+linfa.workspace = true
+linfa-trees.workspace = true
 ndarray.workspace = true
+ndarray-linfa.workspace = true
 polars.workspace = true
 calamine = { workspace = true, optional = true }
 anyhow.workspace = true

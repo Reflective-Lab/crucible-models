@@ -1,15 +1,33 @@
 //! Random Forest classifier.
 //!
-//! This module ships a scaffolded [`RandomForestModel`] that implements
-//! [`crate::model::ClassifierModel`] with a stub training body. The
-//! trait shape, public surface, and bincode serialization are stable;
-//! the actual bagging-of-CART-trees training lands in a follow-up
-//! slice (see `crucible-models/kb/Planning/MILESTONES.md`).
+//! Implements bagging-of-CART-trees on top of `linfa_trees::DecisionTree`.
+//!
+//! The training loop fits `config.n_trees` decision trees, each on a
+//! bootstrap sample of the training rows (sampling with replacement).
+//! At prediction time, each tree votes; the model returns the
+//! majority-vote class from `predict` and the per-class vote fraction
+//! from `predict_proba`.
+//!
+//! Per the backend-library decision in
+//! `kb/Architecture/Backend Library Choices.md`, the per-tree backend is
+//! linfa-trees, not Burn. Burn stays reserved for `neuro_fuzzy`, where
+//! gradient descent on membership-function parameters is the right tool.
+//!
+//! Feature subsampling — the "random" in Random Forest's split-time
+//! feature sampling — is not yet implemented. The current loop uses
+//! classic bagging only. A follow-up slice adds feature subsampling
+//! when an app pulls on the additional variance reduction. The trait
+//! shape stays unchanged either way.
 
 use std::{fs, path::Path};
 
 use anyhow::{Context as _, Result};
+use linfa::Dataset;
+use linfa::prelude::*;
+use linfa_trees::DecisionTree;
 use ndarray::{Array1, Array2};
+use ndarray_linfa as ndl;
+use rand::{Rng as _, SeedableRng as _, rngs::StdRng};
 use serde::{Deserialize, Serialize};
 
 use crate::model::ClassifierModel;
@@ -17,9 +35,16 @@ use crate::model::ClassifierModel;
 /// Hyperparameters for [`RandomForestModel`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RandomForestConfig {
+    /// Number of trees in the ensemble. Must be >= 1.
     pub n_trees: usize,
+    /// Maximum depth per tree. `None` means unlimited.
     pub max_depth: Option<usize>,
-    pub min_samples_split: usize,
+    /// Minimum sum-of-sample-weights to allow a split. Linfa's default
+    /// is `2.0`; lowering it permits more aggressive splitting at the
+    /// cost of overfit risk per tree (mitigated by the ensemble).
+    pub min_weight_split: f32,
+    /// Seed for the bootstrap-sampling RNG. Identical seeds + identical
+    /// data + identical config yield identical models.
     pub random_seed: u64,
 }
 
@@ -28,7 +53,7 @@ impl Default for RandomForestConfig {
         Self {
             n_trees: 100,
             max_depth: None,
-            min_samples_split: 2,
+            min_weight_split: 2.0,
             random_seed: 0,
         }
     }
@@ -36,17 +61,20 @@ impl Default for RandomForestConfig {
 
 /// Random Forest classifier.
 ///
-/// TODO(slice-2b): real bagging-of-CART-trees implementation. The
-/// current body records the dominant class observed at training and
-/// returns it as the prediction for every sample, with uniform
-/// per-class probabilities. This is enough to round-trip the trait,
-/// the artifact, and the training-pipeline shape; it is not a model
-/// to ship into a decision.
+/// Bagging ensemble of `linfa_trees::DecisionTree<f64, usize>`. Each
+/// tree is fit on a bootstrap sample of the training rows; predictions
+/// aggregate by per-class vote fraction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RandomForestModel {
     config: RandomForestConfig,
     n_classes: usize,
-    dominant_class: usize,
+    trees: Vec<DecisionTree<f64, usize>>,
+}
+
+fn to_linfa_features(arr: &Array2<f64>) -> ndl::Array2<f64> {
+    let (rows, cols) = arr.dim();
+    let data: Vec<f64> = arr.iter().copied().collect();
+    ndl::Array2::from_shape_vec((rows, cols), data).expect("shape known correct from source array")
 }
 
 impl ClassifierModel for RandomForestModel {
@@ -67,25 +95,48 @@ impl ClassifierModel for RandomForestModel {
             !labels.is_empty(),
             "RandomForest training requires at least one labelled sample"
         );
+        anyhow::ensure!(config.n_trees > 0, "n_trees must be >= 1");
 
+        let n_samples = features.nrows();
+        let n_features = features.ncols();
         let n_classes = labels.iter().copied().max().map_or(0, |m| m + 1);
 
-        let dominant_class = {
-            let mut counts = vec![0usize; n_classes];
-            for &y in labels {
-                counts[y] += 1;
+        let mut rng = StdRng::seed_from_u64(config.random_seed);
+
+        let mut trees = Vec::with_capacity(config.n_trees);
+        for tree_idx in 0..config.n_trees {
+            // Bootstrap sample: n_samples row indices, with replacement.
+            let indices: Vec<usize> = (0..n_samples)
+                .map(|_| rng.gen_range(0..n_samples))
+                .collect();
+
+            // Materialise the bootstrap matrices in linfa's ndarray
+            // namespace (0.16). Cheap relative to tree fitting.
+            let mut feat_data = Vec::with_capacity(n_samples * n_features);
+            let mut label_data = Vec::with_capacity(n_samples);
+            for &i in &indices {
+                for c in 0..n_features {
+                    feat_data.push(features[(i, c)]);
+                }
+                label_data.push(labels[i]);
             }
-            counts
-                .iter()
-                .enumerate()
-                .max_by_key(|&(_, &c)| c)
-                .map_or(0, |(idx, _)| idx)
-        };
+            let feat = ndl::Array2::from_shape_vec((n_samples, n_features), feat_data)
+                .expect("bootstrap shape correct by construction");
+            let lab = ndl::Array1::from_vec(label_data);
+
+            let dataset = Dataset::new(feat, lab);
+            let tree = DecisionTree::<f64, usize>::params()
+                .max_depth(config.max_depth)
+                .min_weight_split(config.min_weight_split)
+                .fit(&dataset)
+                .with_context(|| format!("fitting bootstrap tree {tree_idx}"))?;
+            trees.push(tree);
+        }
 
         Ok(Self {
             config: config.clone(),
             n_classes,
-            dominant_class,
+            trees,
         })
     }
 
@@ -94,15 +145,46 @@ impl ClassifierModel for RandomForestModel {
     }
 
     fn predict(&self, features: &Array2<f64>) -> Result<Array1<usize>> {
-        Ok(Array1::from_elem(features.nrows(), self.dominant_class))
+        let proba = self.predict_proba(features)?;
+        let n = proba.nrows();
+        let mut out = Array1::<usize>::zeros(n);
+        for row in 0..n {
+            let mut best_class = 0_usize;
+            let mut best_p = f64::NEG_INFINITY;
+            for c in 0..self.n_classes {
+                let p = proba[(row, c)];
+                if p > best_p {
+                    best_p = p;
+                    best_class = c;
+                }
+            }
+            out[row] = best_class;
+        }
+        Ok(out)
     }
 
     fn predict_proba(&self, features: &Array2<f64>) -> Result<Array2<f64>> {
-        let uniform = 1.0_f64 / self.n_classes.max(1) as f64;
-        Ok(Array2::from_elem(
-            (features.nrows(), self.n_classes),
-            uniform,
-        ))
+        anyhow::ensure!(
+            !self.trees.is_empty(),
+            "predict_proba called on an unfit RandomForestModel"
+        );
+
+        let features_linfa = to_linfa_features(features);
+        let n = features.nrows();
+        let mut votes = Array2::<f64>::zeros((n, self.n_classes.max(1)));
+
+        for tree in &self.trees {
+            let preds: ndl::Array1<usize> = tree.predict(&features_linfa);
+            for (row, &cls) in preds.iter().enumerate() {
+                if cls < self.n_classes {
+                    votes[(row, cls)] += 1.0;
+                }
+            }
+        }
+
+        let n_trees = self.trees.len() as f64;
+        votes.mapv_inplace(|v| v / n_trees);
+        Ok(votes)
     }
 
     fn save(&self, path: &Path) -> Result<()> {
@@ -124,24 +206,64 @@ mod tests {
     use super::*;
     use ndarray::{Axis, array};
 
-    #[test]
-    fn trains_and_predicts_dominant_class_stub() {
-        let features = array![[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]];
-        let labels = array![1, 1, 0, 1];
-        let model =
-            RandomForestModel::train(&RandomForestConfig::default(), &features, &labels).unwrap();
+    /// Two linearly-separable Gaussian clusters in 2D. Class 0 around
+    /// (-2, -2); class 1 around (+2, +2). A correctly-trained RF should
+    /// classify the cluster centres without difficulty.
+    fn two_cluster_dataset(seed: u64) -> (Array2<f64>, Array1<usize>) {
+        let mut rng = StdRng::seed_from_u64(seed);
+        let mut feats = Vec::with_capacity(200);
+        let mut labs = Vec::with_capacity(100);
+        for _ in 0..50 {
+            feats.push(-2.0 + rng.gen_range(-0.3..0.3));
+            feats.push(-2.0 + rng.gen_range(-0.3..0.3));
+            labs.push(0usize);
+        }
+        for _ in 0..50 {
+            feats.push(2.0 + rng.gen_range(-0.3..0.3));
+            feats.push(2.0 + rng.gen_range(-0.3..0.3));
+            labs.push(1usize);
+        }
+        let features = Array2::from_shape_vec((100, 2), feats).unwrap();
+        let labels = Array1::from_vec(labs);
+        (features, labels)
+    }
 
-        assert_eq!(model.n_classes(), 2);
-        let pred = model.predict(&features).unwrap();
-        assert!(pred.iter().all(|&c| c == 1));
+    #[test]
+    fn trains_and_separates_two_clusters() {
+        let (features, labels) = two_cluster_dataset(7);
+        let config = RandomForestConfig {
+            n_trees: 25,
+            max_depth: Some(6),
+            min_weight_split: 2.0,
+            random_seed: 11,
+        };
+        let model = RandomForestModel::train(&config, &features, &labels).unwrap();
+
+        let preds = model.predict(&features).unwrap();
+        let correct = preds
+            .iter()
+            .zip(labels.iter())
+            .filter(|(p, y)| p == y)
+            .count();
+        // Linearly separable clusters → expect near-perfect on train.
+        assert!(
+            correct >= 95,
+            "expected >= 95/100 correct on linearly separable train, got {correct}"
+        );
     }
 
     #[test]
     fn predict_proba_rows_sum_to_one() {
-        let features = array![[0.0, 0.0], [1.0, 1.0]];
-        let labels = array![0, 1];
-        let model =
-            RandomForestModel::train(&RandomForestConfig::default(), &features, &labels).unwrap();
+        let (features, labels) = two_cluster_dataset(3);
+        let model = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 10,
+                ..RandomForestConfig::default()
+            },
+            &features,
+            &labels,
+        )
+        .unwrap();
 
         let proba = model.predict_proba(&features).unwrap();
         for row in proba.axis_iter(Axis(0)) {
@@ -151,18 +273,45 @@ mod tests {
     }
 
     #[test]
-    fn save_load_roundtrip() {
-        let features = array![[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]];
-        let labels = array![0, 1, 1];
-        let model =
-            RandomForestModel::train(&RandomForestConfig::default(), &features, &labels).unwrap();
+    fn deterministic_under_fixed_seed() {
+        let (features, labels) = two_cluster_dataset(42);
+        let config = RandomForestConfig {
+            n_trees: 5,
+            max_depth: Some(4),
+            min_weight_split: 2.0,
+            random_seed: 1234,
+        };
+        let a = RandomForestModel::train(&config, &features, &labels).unwrap();
+        let b = RandomForestModel::train(&config, &features, &labels).unwrap();
+
+        let pa = a.predict_proba(&features).unwrap();
+        let pb = b.predict_proba(&features).unwrap();
+        assert_eq!(
+            pa, pb,
+            "identical config + data must yield identical predictions"
+        );
+    }
+
+    #[test]
+    fn save_load_roundtrip_preserves_predictions() {
+        let (features, labels) = two_cluster_dataset(9);
+        let model = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 5,
+                ..RandomForestConfig::default()
+            },
+            &features,
+            &labels,
+        )
+        .unwrap();
 
         let tmp = tempfile::NamedTempFile::new().unwrap();
         model.save(tmp.path()).unwrap();
         let loaded = RandomForestModel::load(tmp.path()).unwrap();
 
-        assert_eq!(loaded.n_classes(), model.n_classes());
-        assert_eq!(loaded.dominant_class, model.dominant_class);
+        let p1 = model.predict_proba(&features).unwrap();
+        let p2 = loaded.predict_proba(&features).unwrap();
+        assert_eq!(p1, p2, "save/load must preserve predictions bit-for-bit");
     }
 
     #[test]
@@ -181,5 +330,20 @@ mod tests {
         let err = RandomForestModel::train(&RandomForestConfig::default(), &features, &labels)
             .unwrap_err();
         assert!(err.to_string().contains("at least one labelled sample"));
+    }
+
+    #[test]
+    fn train_rejects_zero_trees() {
+        let (features, labels) = two_cluster_dataset(0);
+        let err = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 0,
+                ..RandomForestConfig::default()
+            },
+            &features,
+            &labels,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("n_trees must be >= 1"));
     }
 }

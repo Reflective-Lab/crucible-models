@@ -14,9 +14,18 @@ source: human
   `predict` / `predict_proba` / `save` / `load`).
 - Added `crucible::ensembles::random_forest::RandomForestModel` and
   `RandomForestConfig` as the first concrete `ClassifierModel`
-  implementation. Training body is a dominant-class stub; real
-  bagging-of-CART-trees implementation lands in slice 2b. 5 unit tests
-  pass, bincode round-trip verified.
+  implementation. Initial commit scaffolded the trait shape with a
+  dominant-class stub (5 unit tests). Same-day follow-up replaced
+  the stub with a real bagging-of-CART implementation on top of
+  `linfa_trees::DecisionTree`: bootstrap sampling, majority-vote
+  predict, per-class vote-fraction predict_proba, deterministic
+  under fixed seed, bincode artifact via linfa's serde feature. Now
+  7 unit tests including two-cluster separability and save/load
+  prediction preservation. Feature subsampling deferred.
+- Workspace deps added: linfa 0.8, linfa-trees 0.8 (serde feature),
+  ndarray-linfa = "ndarray 0.16" renamed (for the linfa boundary;
+  workspace stays on ndarray 0.17). Compiles clean alongside Burn
+  and Polars.
 
 ## 2026-05-14
 

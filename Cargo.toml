@@ -15,9 +15,17 @@ converge-pack = "3.8.1"
 converge-optimization = "3.8.1"
 converge-kernel = "3.8.1"
 
-# ML training framework
+# ML training frameworks
+# Burn: deep-learning / differentiable models (ANFIS).
 burn = { version = "0.20.0", features = ["ndarray", "train"] }
+# Linfa: classical / non-differentiable models (Random Forest, CART, SVMs).
+# See kb/Architecture/Backend Library Choices.md for the per-pack rationale.
+linfa = "0.8"
+linfa-trees = { version = "0.8", features = ["serde"] }
 ndarray = "0.17.2"
+# linfa pins ndarray 0.16; renamed to avoid clashing with workspace's 0.17.
+# Used only at the linfa interop boundary in crates that touch linfa types.
+ndarray-linfa = { package = "ndarray", version = "0.16" }
 
 # Data
 polars = { version = "0.51.0", features = ["csv", "lazy", "log", "ndarray", "parquet", "rows"] }
