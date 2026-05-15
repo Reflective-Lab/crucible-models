@@ -5,6 +5,11 @@ source: human
 
 ## 2026-05-15
 
+- Recorded the backend-library decision in
+  `Architecture/Backend Library Choices.md`: linfa-trees for tree-based
+  packs (`ensembles`, `trees`), linfa-svm (or smartcore) for `svm`,
+  Burn for `neuro_fuzzy` (ANFIS). Corrected the misleading
+  "all trained via Burn" framing in Home.md.
 - Added `crucible::model::ClassifierModel` trait (`train` / `n_classes` /
   `predict` / `predict_proba` / `save` / `load`).
 - Added `crucible::ensembles::random_forest::RandomForestModel` and

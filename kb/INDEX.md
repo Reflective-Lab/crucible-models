@@ -11,6 +11,7 @@ Major entities in the `crucible-models` knowledge base.
 - [Model Types](Architecture/Model%20Types.md) — planned model inventory with algorithm sketches
 - [Project Boundary](Architecture/Project%20Boundary.md) — what stays in prism-analytics vs. crucible-models
 - [AI Paradigms](Architecture/AI%20Paradigms.md) — conceptual map of AI paradigms and where each model fits
+- [Backend Library Choices](Architecture/Backend%20Library%20Choices.md) — per-pack ML library decision (linfa for non-differentiable packs, Burn for ANFIS)
 
 ## Planning
 
