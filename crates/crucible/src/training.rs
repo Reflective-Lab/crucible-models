@@ -1,7 +1,10 @@
 // Copyright 2024-2026 Reflective Labs
 
 use anyhow::{Context as _, Result, anyhow};
-use converge_pack::{AgentEffect, Context, ContextKey, ProposalId, ProposedFact, Suggestor};
+use converge_pack::{
+    AgentEffect, Context, ContextKey, DiagnosticPayload, FactPayload, ProposalId, ProposedFact,
+    Suggestor,
+};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -18,12 +21,36 @@ fn proposal(
     _agent_name: &str,
     key: ContextKey,
     id: impl Into<String>,
-    content: impl Into<String>,
+    payload: impl FactPayload + PartialEq,
 ) -> ProposedFact {
-    CRUCIBLE_PROVENANCE.proposed_fact(key, ProposalId::new(id.into()), content)
+    CRUCIBLE_PROVENANCE.proposed_fact(key, ProposalId::new(id.into()), payload)
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+fn diagnostic(
+    agent_name: &str,
+    key: ContextKey,
+    id: impl Into<String>,
+    message: impl Into<String>,
+) -> ProposedFact {
+    proposal(
+        agent_name,
+        key,
+        id,
+        DiagnosticPayload::new(agent_name, message.into()),
+    )
+}
+
+macro_rules! impl_fact_payload {
+    ($ty:ty, $family:literal) => {
+        impl FactPayload for $ty {
+            const FAMILY: &'static str = $family;
+            const VERSION: u16 = 1;
+        }
+    };
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct TrainingPlan {
     pub iteration: usize,
     pub max_rows: usize,
@@ -33,7 +60,8 @@ pub struct TrainingPlan {
     pub quality_threshold: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct DatasetSplit {
     pub source_path: String,
     pub train_path: String,
@@ -47,13 +75,15 @@ pub struct DatasetSplit {
     pub iteration: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct BaselineModel {
     pub target_column: String,
     pub mean: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct ModelMetadata {
     pub model_path: String,
     pub target_column: String,
@@ -62,7 +92,8 @@ pub struct ModelMetadata {
     pub iteration: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct EvaluationReport {
     pub model_path: String,
     pub metric: String,
@@ -73,7 +104,8 @@ pub struct EvaluationReport {
     pub iteration: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct InferenceSample {
     pub model_path: String,
     pub target_column: String,
@@ -83,7 +115,8 @@ pub struct InferenceSample {
     pub iteration: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct DataQualityReport {
     pub kind: String,
     pub iteration: usize,
@@ -95,7 +128,8 @@ pub struct DataQualityReport {
     pub drift_score: Option<f64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct FeatureInteraction {
     pub name: String,
     pub left: String,
@@ -103,7 +137,8 @@ pub struct FeatureInteraction {
     pub op: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct FeatureSpec {
     pub kind: String,
     pub iteration: usize,
@@ -114,7 +149,8 @@ pub struct FeatureSpec {
     pub interactions: Vec<FeatureInteraction>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct HyperparameterSearchPlan {
     pub kind: String,
     pub iteration: usize,
@@ -123,7 +159,8 @@ pub struct HyperparameterSearchPlan {
     pub params: HashMap<String, Vec<f64>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct HyperparameterSearchResult {
     pub kind: String,
     pub iteration: usize,
@@ -131,7 +168,8 @@ pub struct HyperparameterSearchResult {
     pub score: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct ModelRegistryRecord {
     pub kind: String,
     pub iteration: usize,
@@ -140,7 +178,8 @@ pub struct ModelRegistryRecord {
     pub provenance: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct MonitoringReport {
     pub kind: String,
     pub iteration: usize,
@@ -150,7 +189,8 @@ pub struct MonitoringReport {
     pub status: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct DeploymentDecision {
     pub kind: String,
     pub iteration: usize,
@@ -158,6 +198,26 @@ pub struct DeploymentDecision {
     pub reason: String,
     pub retrain: bool,
 }
+
+impl_fact_payload!(TrainingPlan, "crucible.training.plan");
+impl_fact_payload!(DatasetSplit, "crucible.dataset.split");
+impl_fact_payload!(BaselineModel, "crucible.baseline.model");
+impl_fact_payload!(ModelMetadata, "crucible.model.metadata");
+impl_fact_payload!(EvaluationReport, "crucible.evaluation.report");
+impl_fact_payload!(InferenceSample, "crucible.inference.sample");
+impl_fact_payload!(DataQualityReport, "crucible.data_quality.report");
+impl_fact_payload!(FeatureSpec, "crucible.feature.spec");
+impl_fact_payload!(
+    HyperparameterSearchPlan,
+    "crucible.hyperparameter_search.plan"
+);
+impl_fact_payload!(
+    HyperparameterSearchResult,
+    "crucible.hyperparameter_search.result"
+);
+impl_fact_payload!(ModelRegistryRecord, "crucible.model.registry_record");
+impl_fact_payload!(MonitoringReport, "crucible.monitoring.report");
+impl_fact_payload!(DeploymentDecision, "crucible.deployment.decision");
 
 #[derive(Debug)]
 pub struct DatasetAgent {
@@ -220,7 +280,7 @@ impl Suggestor for DataValidationAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "data-validation-error",
@@ -232,7 +292,7 @@ impl Suggestor for DataValidationAgent {
         let df = match load_dataframe(Path::new(&split.train_path)) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "data-validation-error",
@@ -277,12 +337,11 @@ impl Suggestor for DataValidationAgent {
             drift_score,
         };
 
-        let content = serde_json::to_string(&report).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Signals,
             format!("data-quality-{}", split.iteration),
-            content,
+            report,
         ))
     }
 }
@@ -325,7 +384,7 @@ impl Suggestor for FeatureEngineeringAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "feature-engineering-error",
@@ -337,7 +396,7 @@ impl Suggestor for FeatureEngineeringAgent {
         let df = match load_dataframe(Path::new(&split.train_path)) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "feature-engineering-error",
@@ -349,7 +408,7 @@ impl Suggestor for FeatureEngineeringAgent {
         let (target_column, _) = match select_target_column(&df) {
             Ok(value) => value,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "feature-engineering-error",
@@ -380,12 +439,11 @@ impl Suggestor for FeatureEngineeringAgent {
             interactions,
         };
 
-        let content = serde_json::to_string(&spec).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Constraints,
             format!("feature-spec-{}", split.iteration),
-            content,
+            spec,
         ))
     }
 }
@@ -430,7 +488,7 @@ impl Suggestor for HyperparameterSearchAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "hyperparam-search-error",
@@ -472,21 +530,18 @@ impl Suggestor for HyperparameterSearchAgent {
             score,
         };
 
-        let plan_content = serde_json::to_string(&plan).unwrap_or_default();
-        let result_content = serde_json::to_string(&result).unwrap_or_default();
-
         AgentEffect::builder()
             .proposal(proposal(
                 self.name(),
                 ContextKey::Constraints,
                 format!("hyperparam-plan-{}", split.iteration),
-                plan_content,
+                plan,
             ))
             .proposal(proposal(
                 self.name(),
                 ContextKey::Evaluations,
                 format!("hyperparam-result-{}", split.iteration),
-                result_content,
+                result,
             ))
             .build()
     }
@@ -524,7 +579,7 @@ impl Suggestor for DatasetAgent {
         )
         .entered();
         if let Err(err) = create_dir_all(&self.data_dir) {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "dataset-agent-error",
@@ -534,7 +589,7 @@ impl Suggestor for DatasetAgent {
 
         let dataset_path = self.dataset_path();
         if let Err(err) = download_dataset_if_missing(&dataset_path) {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "dataset-agent-error",
@@ -545,7 +600,7 @@ impl Suggestor for DatasetAgent {
         let df = match load_dataframe(&dataset_path) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "dataset-agent-error",
@@ -556,7 +611,7 @@ impl Suggestor for DatasetAgent {
 
         let total_rows = df.height();
         if total_rows < 10 {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "dataset-agent-error",
@@ -597,7 +652,7 @@ impl Suggestor for DatasetAgent {
             .and_then(|()| write_parquet(&val_df, &val_path))
             .and_then(|()| write_parquet(&infer_df, &infer_path))
         {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "dataset-agent-error",
@@ -618,12 +673,11 @@ impl Suggestor for DatasetAgent {
             iteration: plan.iteration,
         };
 
-        let content = serde_json::to_string(&split).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Signals,
             format!("dataset-split-{}", plan.iteration),
-            content,
+            split,
         ))
     }
 }
@@ -675,7 +729,7 @@ impl Suggestor for ModelTrainingAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-training-error",
@@ -685,7 +739,7 @@ impl Suggestor for ModelTrainingAgent {
         };
 
         if let Err(err) = create_dir_all(&self.model_dir) {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "model-training-error",
@@ -696,7 +750,7 @@ impl Suggestor for ModelTrainingAgent {
         let raw_train_df = match load_dataframe(Path::new(&split.train_path)) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-training-error",
@@ -710,7 +764,7 @@ impl Suggestor for ModelTrainingAgent {
             Some(spec) => match apply_feature_spec(&raw_train_df, &spec) {
                 Ok(df) => df,
                 Err(err) => {
-                    return AgentEffect::with_proposal(proposal(
+                    return AgentEffect::with_proposal(diagnostic(
                         self.name(),
                         ContextKey::Diagnostic,
                         "model-training-error",
@@ -724,7 +778,7 @@ impl Suggestor for ModelTrainingAgent {
         let (target_name, target) = match select_target_column(&train_df) {
             Ok(value) => value,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-training-error",
@@ -736,7 +790,7 @@ impl Suggestor for ModelTrainingAgent {
         let mean = match mean_of_series(&target) {
             Ok(value) => value,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-training-error",
@@ -752,7 +806,7 @@ impl Suggestor for ModelTrainingAgent {
 
         let model_path = self.model_path();
         if let Err(err) = write_json(&model_path, &model) {
-            return AgentEffect::with_proposal(proposal(
+            return AgentEffect::with_proposal(diagnostic(
                 self.name(),
                 ContextKey::Diagnostic,
                 "model-training-error",
@@ -768,12 +822,11 @@ impl Suggestor for ModelTrainingAgent {
             iteration: split.iteration,
         };
 
-        let content = serde_json::to_string(&meta).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Strategies,
             format!("trained-model-{}", split.iteration),
-            content,
+            meta,
         ))
     }
 }
@@ -826,7 +879,7 @@ impl Suggestor for ModelRegistryAgent {
         let meta = match read_latest_model_meta_from_ctx(ctx) {
             Ok(meta) => meta,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-registry-error",
@@ -850,12 +903,11 @@ impl Suggestor for ModelRegistryAgent {
             provenance: "training_flow".to_string(),
         };
 
-        let content = serde_json::to_string(&record).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Strategies,
             format!("model-registry-{}", record.iteration),
-            content,
+            record,
         ))
     }
 }
@@ -915,12 +967,11 @@ impl Suggestor for MonitoringAgent {
             status: status.to_string(),
         };
 
-        let content = serde_json::to_string(&monitoring).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Evaluations,
             format!("monitoring-{}", report.iteration),
-            content,
+            monitoring,
         ))
     }
 }
@@ -983,12 +1034,11 @@ impl Suggestor for DeploymentAgent {
             retrain,
         };
 
-        let content = serde_json::to_string(&decision).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Strategies,
             format!("deployment-{}", report.iteration),
-            content,
+            decision,
         ))
     }
 }
@@ -1023,7 +1073,7 @@ impl Suggestor for ModelEvaluationAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1035,7 +1085,7 @@ impl Suggestor for ModelEvaluationAgent {
         let model = match read_model_from_ctx(ctx) {
             Ok(model) => model,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1047,7 +1097,7 @@ impl Suggestor for ModelEvaluationAgent {
         let raw_val_df = match load_dataframe(Path::new(&split.val_path)) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1065,7 +1115,7 @@ impl Suggestor for ModelEvaluationAgent {
         let target = match get_numeric_series(&val_df, &model.target_column) {
             Ok(series) => series,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1077,7 +1127,7 @@ impl Suggestor for ModelEvaluationAgent {
         let mae = match mean_abs_error(&target, model.mean) {
             Ok(value) => value,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1089,7 +1139,7 @@ impl Suggestor for ModelEvaluationAgent {
         let mean_abs = match mean_abs_value(&target) {
             Ok(value) => value,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-eval-error",
@@ -1114,12 +1164,11 @@ impl Suggestor for ModelEvaluationAgent {
             iteration: split.iteration,
         };
 
-        let content = serde_json::to_string(&report).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Evaluations,
             format!("model-eval-{}", split.iteration),
-            content,
+            report,
         ))
     }
 }
@@ -1165,7 +1214,7 @@ impl Suggestor for SampleInferenceAgent {
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-infer-error",
@@ -1177,7 +1226,7 @@ impl Suggestor for SampleInferenceAgent {
         let model = match read_model_from_ctx(ctx) {
             Ok(model) => model,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-infer-error",
@@ -1189,7 +1238,7 @@ impl Suggestor for SampleInferenceAgent {
         let infer_df = match load_dataframe(Path::new(&split.infer_path)) {
             Ok(df) => df,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-infer-error",
@@ -1201,7 +1250,7 @@ impl Suggestor for SampleInferenceAgent {
         let target = match get_numeric_series(&infer_df, &model.target_column) {
             Ok(series) => series,
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-infer-error",
@@ -1217,7 +1266,7 @@ impl Suggestor for SampleInferenceAgent {
                 .take(sample_rows)
                 .collect::<Vec<_>>(),
             Err(err) => {
-                return AgentEffect::with_proposal(proposal(
+                return AgentEffect::with_proposal(diagnostic(
                     self.name(),
                     ContextKey::Diagnostic,
                     "model-infer-error",
@@ -1236,12 +1285,11 @@ impl Suggestor for SampleInferenceAgent {
             iteration: split.iteration,
         };
 
-        let content = serde_json::to_string(&sample).unwrap_or_default();
         AgentEffect::with_proposal(proposal(
             self.name(),
             ContextKey::Hypotheses,
             format!("inference-sample-{}", split.iteration),
-            content,
+            sample,
         ))
     }
 }
@@ -1305,7 +1353,7 @@ fn read_latest_split_from_ctx(ctx: &dyn Context) -> Result<DatasetSplit> {
     let facts = ctx.get(ContextKey::Signals);
     let mut latest: Option<DatasetSplit> = None;
     for fact in facts {
-        if let Ok(split) = serde_json::from_str::<DatasetSplit>(fact.content()) {
+        if let Some(split) = fact.payload::<DatasetSplit>().cloned() {
             let should_replace = match &latest {
                 Some(current) => split.iteration > current.iteration,
                 None => true,
@@ -1334,7 +1382,7 @@ fn read_latest_model_meta_from_ctx(ctx: &dyn Context) -> Result<ModelMetadata> {
     let facts = ctx.get(ContextKey::Strategies);
     let mut latest: Option<ModelMetadata> = None;
     for fact in facts {
-        if let Ok(meta) = serde_json::from_str::<ModelMetadata>(fact.content()) {
+        if let Some(meta) = fact.payload::<ModelMetadata>().cloned() {
             let should_replace = match &latest {
                 Some(current) => meta.iteration > current.iteration,
                 None => true,
@@ -1351,7 +1399,7 @@ fn read_latest_plan_from_ctx(ctx: &dyn Context) -> Option<TrainingPlan> {
     let facts = ctx.get(ContextKey::Constraints);
     let mut latest: Option<TrainingPlan> = None;
     for fact in facts {
-        if let Ok(plan) = serde_json::from_str::<TrainingPlan>(fact.content()) {
+        if let Some(plan) = fact.payload::<TrainingPlan>().cloned() {
             let should_replace = match &latest {
                 Some(current) => plan.iteration > current.iteration,
                 None => true,
@@ -1366,88 +1414,78 @@ fn read_latest_plan_from_ctx(ctx: &dyn Context) -> Option<TrainingPlan> {
 
 fn has_split_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Signals).iter().any(|fact| {
-        serde_json::from_str::<DatasetSplit>(fact.content())
-            .map(|split| split.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<DatasetSplit>()
+            .is_some_and(|split| split.iteration == iteration)
     })
 }
 
 fn has_model_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Strategies).iter().any(|fact| {
-        serde_json::from_str::<ModelMetadata>(fact.content())
-            .map(|meta| meta.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<ModelMetadata>()
+            .is_some_and(|meta| meta.iteration == iteration)
     })
 }
 
 fn has_evaluation_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Evaluations).iter().any(|fact| {
-        serde_json::from_str::<EvaluationReport>(fact.content())
-            .map(|report| report.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<EvaluationReport>()
+            .is_some_and(|report| report.iteration == iteration)
     })
 }
 
 fn has_inference_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Hypotheses).iter().any(|fact| {
-        serde_json::from_str::<InferenceSample>(fact.content())
-            .map(|sample| sample.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<InferenceSample>()
+            .is_some_and(|sample| sample.iteration == iteration)
     })
 }
 
 fn has_data_quality_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Signals).iter().any(|fact| {
-        serde_json::from_str::<DataQualityReport>(fact.content())
-            .map(|report| report.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<DataQualityReport>()
+            .is_some_and(|report| report.iteration == iteration)
     })
 }
 
 fn has_feature_spec_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Constraints).iter().any(|fact| {
-        serde_json::from_str::<FeatureSpec>(fact.content())
-            .map(|spec| spec.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<FeatureSpec>()
+            .is_some_and(|spec| spec.iteration == iteration)
     })
 }
 
 fn has_hyperparam_result_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Evaluations).iter().any(|fact| {
-        serde_json::from_str::<HyperparameterSearchResult>(fact.content())
-            .map(|result| result.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<HyperparameterSearchResult>()
+            .is_some_and(|result| result.iteration == iteration)
     })
 }
 
 fn has_registry_record_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Strategies).iter().any(|fact| {
-        serde_json::from_str::<ModelRegistryRecord>(fact.content())
-            .map(|record| record.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<ModelRegistryRecord>()
+            .is_some_and(|record| record.iteration == iteration)
     })
 }
 
 fn has_monitoring_report_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Evaluations).iter().any(|fact| {
-        serde_json::from_str::<MonitoringReport>(fact.content())
-            .map(|report| report.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<MonitoringReport>()
+            .is_some_and(|report| report.iteration == iteration)
     })
 }
 
 fn has_deployment_decision_for_iteration(ctx: &dyn Context, iteration: usize) -> bool {
     ctx.get(ContextKey::Strategies).iter().any(|fact| {
-        serde_json::from_str::<DeploymentDecision>(fact.content())
-            .map(|decision| decision.iteration == iteration)
-            .unwrap_or(false)
+        fact.payload::<DeploymentDecision>()
+            .is_some_and(|decision| decision.iteration == iteration)
     })
 }
 
 fn latest_evaluation_report(ctx: &dyn Context, iteration: usize) -> Option<EvaluationReport> {
     let mut latest: Option<EvaluationReport> = None;
     for fact in ctx.get(ContextKey::Evaluations) {
-        if let Ok(report) = serde_json::from_str::<EvaluationReport>(fact.content()) {
+        if let Some(report) = fact.payload::<EvaluationReport>().cloned() {
             if iteration > 0 {
                 if report.iteration == iteration {
                     return Some(report);
@@ -1469,7 +1507,7 @@ fn latest_data_quality_before_iteration(
 ) -> Option<DataQualityReport> {
     let mut latest: Option<DataQualityReport> = None;
     for fact in ctx.get(ContextKey::Signals) {
-        if let Ok(report) = serde_json::from_str::<DataQualityReport>(fact.content())
+        if let Some(report) = fact.payload::<DataQualityReport>().cloned()
             && report.iteration < iteration
             && latest
                 .as_ref()
@@ -1658,9 +1696,9 @@ fn is_numeric_dtype(dtype: &DataType) -> bool {
 /// Read the latest FeatureSpec from context for a given iteration
 fn read_feature_spec_from_ctx(ctx: &dyn Context, iteration: usize) -> Option<FeatureSpec> {
     ctx.get(ContextKey::Constraints).iter().find_map(|fact| {
-        serde_json::from_str::<FeatureSpec>(fact.content())
-            .ok()
+        fact.payload::<FeatureSpec>()
             .filter(|spec| spec.iteration == iteration)
+            .cloned()
     })
 }
 
@@ -1754,11 +1792,14 @@ mod tests {
 
     #[test]
     fn proposal_helper_builds_correct_fact() {
-        let p = proposal("my-agent", ContextKey::Diagnostic, "id-1", "content-1");
-        assert_eq!(p.provenance, "crucible");
+        let p = diagnostic("my-agent", ContextKey::Diagnostic, "id-1", "content-1");
+        assert_eq!(p.provenance(), "crucible");
         assert_eq!(p.key, ContextKey::Diagnostic);
         assert_eq!(p.id, "id-1");
-        assert_eq!(p.content, "content-1");
+        assert_eq!(
+            p.require_payload::<DiagnosticPayload>().unwrap().message(),
+            "content-1"
+        );
     }
 
     #[test]

@@ -2,7 +2,7 @@
 
 use std::{error::Error, fmt, str::FromStr};
 
-use converge_pack::{ContextKey, ProposalId, ProposedFact};
+use converge_pack::{ContextKey, FactPayload, ProposalId, ProposedFact};
 use serde::{Deserialize, Serialize};
 use tracing::info_span;
 
@@ -52,9 +52,9 @@ impl ProvenanceSource {
         self,
         key: ContextKey,
         id: impl Into<ProposalId>,
-        content: impl Into<String>,
+        payload: impl FactPayload + PartialEq,
     ) -> ProposedFact {
-        ProposedFact::new(key, id, content, self.as_str())
+        ProposedFact::new(key, id, payload, self.as_str())
     }
 }
 
@@ -112,6 +112,7 @@ pub(crate) fn suggestor_span(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use converge_pack::TextPayload;
 
     #[test]
     fn provenance_sources_round_trip_through_strings() {
@@ -124,9 +125,12 @@ mod tests {
 
     #[test]
     fn proposed_fact_uses_canonical_source_string() {
-        let fact =
-            CRUCIBLE_PROVENANCE.proposed_fact(ContextKey::Diagnostic, "diagnostic", "content");
+        let fact = CRUCIBLE_PROVENANCE.proposed_fact(
+            ContextKey::Diagnostic,
+            "diagnostic",
+            TextPayload::new("content"),
+        );
 
-        assert_eq!(fact.provenance, "crucible");
+        assert_eq!(fact.provenance(), "crucible");
     }
 }
