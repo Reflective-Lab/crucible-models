@@ -206,12 +206,11 @@ impl ClassifierModel for RandomForestModel {
     }
 
     fn execution_identity(&self) -> ExecutionIdentity {
-        let runtime_config = serde_json::to_string(&self.config).unwrap_or_default();
         ExecutionIdentity::non_native(
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
             RF_BACKEND,
-            runtime_config,
+            ExecutionIdentity::runtime_config_from_typed(&self.config),
         )
     }
 }
