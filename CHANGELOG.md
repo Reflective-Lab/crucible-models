@@ -7,8 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (BREAKING)
+
+- `crucible::types::ClassPredictionPayload` bumped from family-version
+  `1` to `2`. New required field `execution_identity:
+  converge_pack::ExecutionIdentity` records producer crate, backend
+  (`linfa-trees-v0.8` for both RF and DT today), and serialized
+  runtime config (the model's hyperparameters) so downstream audit
+  and replay can answer "which library version, with which
+  hyperparameters, produced this prediction?" without re-opening the
+  artifact. Mirrors the existing audit pattern in Ferrox and Soter.
+  v1 had no external consumers; only in-tree call sites need to pass
+  the new argument to `ClassPredictionPayload::new`.
+
 ### Added
 
+- `crucible::model::ClassifierModel::execution_identity(&self) ->
+  ExecutionIdentity` — required trait method that every classifier
+  pack implements. `RandomForestModel` and `DecisionTreeClassifier`
+  both return a non-native identity anchored to the workspace's
+  linfa-trees pin and the serialized model config.
+- `ClassifierSuggestor::execute` now fills
+  `ClassPredictionPayload.execution_identity` from
+  `self.model.execution_identity()` so every emitted prediction is
+  audit-trail complete. Verified end-to-end by the integration
+  harness test (asserts producer name + backend string).
 - `crucible::model::ClassifierModel` trait — narrow classifier surface
   (`train`, `n_classes`, `predict`, `predict_proba`, `save`, `load`)
   shared by every fact-emitting pack in the crate. A companion

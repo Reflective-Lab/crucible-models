@@ -5,6 +5,17 @@ source: human
 
 ## 2026-05-15
 
+- Bumped `ClassPredictionPayload` from v1 to v2 with a required
+  `execution_identity: ExecutionIdentity` field. Added a required
+  `execution_identity()` method on the `ClassifierModel` trait and
+  implemented it for `RandomForestModel` and `DecisionTreeClassifier`
+  (backend `linfa-trees-v0.8`, runtime_config = serialized model
+  config). `ClassifierSuggestor::execute` now fills the field
+  automatically. Brings Crucible in line with the audit pattern
+  already in use by Ferrox and Soter.
+- Strengthened the integration-harness test to assert on producer
+  name, backend string, and non-empty runtime config on every
+  emitted prediction.
 - Added `crucible::trees::DecisionTreeClassifier` (single CART via
   linfa-trees) alongside the bagging Random Forest. Same
   `ClassifierModel` trait, parallel test set, bincode artifact.

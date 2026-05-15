@@ -14,6 +14,7 @@
 use std::path::Path;
 
 use anyhow::Result;
+use converge_pack::ExecutionIdentity;
 use ndarray::{Array1, Array2};
 
 /// A classifier that fits on integer labels and predicts crisp classes
@@ -47,4 +48,15 @@ pub trait ClassifierModel: Sized {
 
     /// Deserialize a trained artifact from a path on disk.
     fn load(path: &Path) -> Result<Self>;
+
+    /// Audit-friendly identity of the execution that would produce a
+    /// prediction with this model: producer (`crucible-models@x.y.z`),
+    /// backend (e.g. `linfa-trees-v0.8`), and a runtime-config string
+    /// that captures the hyperparameters used to train the artifact.
+    ///
+    /// Returned in every `ClassPredictionPayload` so downstream audit
+    /// and replay can answer "which library version, with which
+    /// hyperparameters, produced this prediction?" without needing to
+    /// re-open the artifact.
+    fn execution_identity(&self) -> ExecutionIdentity;
 }

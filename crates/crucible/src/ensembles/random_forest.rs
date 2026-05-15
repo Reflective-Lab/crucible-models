@@ -22,6 +22,7 @@
 use std::{fs, path::Path};
 
 use anyhow::{Context as _, Result};
+use converge_pack::ExecutionIdentity;
 use linfa::Dataset;
 use linfa::prelude::*;
 use linfa_trees::DecisionTree;
@@ -31,6 +32,10 @@ use rand::{Rng as _, SeedableRng as _, rngs::StdRng};
 use serde::{Deserialize, Serialize};
 
 use crate::model::ClassifierModel;
+
+/// Backend identifier embedded in every `RandomForestModel`'s
+/// `ExecutionIdentity`. Tracks the workspace's linfa-trees pin.
+const RF_BACKEND: &str = "linfa-trees-v0.8";
 
 /// Hyperparameters for [`RandomForestModel`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -198,6 +203,16 @@ impl ClassifierModel for RandomForestModel {
         let model = bincode::deserialize::<Self>(&bytes)
             .context("deserializing RandomForestModel artifact")?;
         Ok(model)
+    }
+
+    fn execution_identity(&self) -> ExecutionIdentity {
+        let runtime_config = serde_json::to_string(&self.config).unwrap_or_default();
+        ExecutionIdentity::non_native(
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            RF_BACKEND,
+            runtime_config,
+        )
     }
 }
 
