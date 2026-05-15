@@ -36,15 +36,26 @@ pub mod neuro_fuzzy;
 pub mod provenance;
 #[cfg(feature = "storage")]
 pub mod storage;
+pub mod suggestor;
 pub mod svm;
 pub mod training;
 pub mod trees;
+pub mod types;
 
 pub use ensembles::{RandomForestConfig, RandomForestModel};
 pub use model::ClassifierModel;
 pub use provenance::{CRUCIBLE_PROVENANCE, ProvenanceSource, UnknownProvenanceSource};
+pub use suggestor::ClassifierSuggestor;
 pub use training::{
     DataValidationAgent, DatasetAgent, DeploymentAgent, FeatureEngineeringAgent,
     HyperparameterSearchAgent, ModelEvaluationAgent, ModelRegistryAgent, ModelTrainingAgent,
     MonitoringAgent, SampleInferenceAgent,
 };
+pub use trees::{DecisionTreeClassifier, DecisionTreeConfig};
+pub use types::{ClassPredictionPayload, ClassificationFeaturesPayload};
+
+/// Inference Suggestor for the [`DecisionTreeClassifier`] pack.
+pub type DecisionTreeClassifierSuggestor = ClassifierSuggestor<DecisionTreeClassifier>;
+
+/// Inference Suggestor for the [`RandomForestModel`] pack.
+pub type RandomForestClassifierSuggestor = ClassifierSuggestor<RandomForestModel>;

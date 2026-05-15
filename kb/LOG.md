@@ -5,6 +5,21 @@ source: human
 
 ## 2026-05-15
 
+- Added `crucible::trees::DecisionTreeClassifier` (single CART via
+  linfa-trees) alongside the bagging Random Forest. Same
+  `ClassifierModel` trait, parallel test set, bincode artifact.
+- Added `crucible::types::{ClassificationFeaturesPayload,
+  ClassPredictionPayload}` — typed `FactPayload` payloads in the
+  `crucible.classification.*` family.
+- Added `crucible::suggestor::ClassifierSuggestor<M: ClassifierModel>`
+  with type aliases `DecisionTreeClassifierSuggestor` and
+  `RandomForestClassifierSuggestor`. Reads typed features,
+  runs `predict_proba`, emits typed predictions; wrapped in
+  `crucible.suggestor.execute` tracing span.
+- Added `kb/Planning/Capability Roadmap.md` covering the
+  classification / regression / clustering / ANFIS / SVM order, what
+  pulls each one, and the continuous-learning substrate. The plain
+  rule: every new capability lands only when an app pulls.
 - Recorded the backend-library decision in
   `Architecture/Backend Library Choices.md`: linfa-trees for tree-based
   packs (`ensembles`, `trees`), linfa-svm (or smartcore) for `svm`,

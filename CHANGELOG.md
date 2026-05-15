@@ -13,6 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`train`, `n_classes`, `predict`, `predict_proba`, `save`, `load`)
   shared by every fact-emitting pack in the crate. A companion
   `RegressorModel` will land when a continuous-target app pulls.
+- `crucible::trees::DecisionTreeClassifier` and `DecisionTreeConfig`
+  — single-tree CART classifier on top of `linfa_trees::DecisionTree`,
+  implementing `ClassifierModel`. Useful for interpretable single-tree
+  inference; bincode-serializable; 4 unit tests cover separability,
+  one-hot `predict_proba`, save/load round-trip, and mismatched-length
+  rejection.
+- `crucible::types::ClassificationFeaturesPayload` and
+  `ClassPredictionPayload` — typed `FactPayload` implementations in
+  the `crucible.classification.*` family. Suggestor input/output
+  contract for classifier inference. 3 unit tests cover round-trip and
+  stable family/version strings.
+- `crucible::suggestor::ClassifierSuggestor<M: ClassifierModel>` —
+  generic inference Suggestor that reads
+  `ClassificationFeaturesPayload`s from a configurable input
+  `ContextKey`, runs `predict_proba`, and emits
+  `ClassPredictionPayload`s under a configurable output key with
+  `ProvenanceSource::Crucible` and a `crucible.suggestor.execute`
+  tracing span.
+- Type aliases at the crate root:
+  `DecisionTreeClassifierSuggestor = ClassifierSuggestor<DecisionTreeClassifier>`
+  and
+  `RandomForestClassifierSuggestor = ClassifierSuggestor<RandomForestModel>`.
+  Integration tests of the Suggestors against a real `Context` live
+  in the loan-application showcase (atelier-showcase, slice 2e).
 - `crucible::ensembles::random_forest::RandomForestModel` and
   `RandomForestConfig` — real bagging-of-CART implementation on top of
   `linfa_trees::DecisionTree`. The training loop fits `n_trees`
