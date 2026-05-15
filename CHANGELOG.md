@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-15
+
 ### Changed (BREAKING)
 
 - `crucible::types::ClassPredictionPayload` bumped from family-version
@@ -102,6 +104,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `crucible.suggestor.execute` spans. Mirrors the workspace Suggestor Contract.
 - Cargo features: `storage` (enables `converge-storage`) and `excel` (enables
   `calamine`). Both off by default to keep the lean build cheap.
+- Added the repository security-audit gate and `cargo-deny` policy, with
+  explicit advisory ignores for the currently accepted ML/data dependency
+  chain.
 
 ### Notes
 

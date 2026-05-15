@@ -1413,7 +1413,7 @@ dependencies = [
 
 [[package]]
 name = "converge-crucible-models"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8838,7 +8838,3 @@ checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
 dependencies = [
  "zune-core",
 ]
-
-[[patch.unused]]
-name = "converge-kernel"
-version = "3.8.1"

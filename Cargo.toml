@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/crucible"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.94.0"
 license = "MIT"
@@ -13,7 +13,6 @@ repository = "https://github.com/Reflective-Lab/crucible-models"
 # Converge platform contracts
 converge-pack = "3.8.1"
 converge-optimization = "3.8.1"
-converge-kernel = "3.8.1"
 
 # ML training frameworks
 # Burn: deep-learning / differentiable models (ANFIS).
@@ -83,7 +82,6 @@ float_cmp = "allow"
 
 [patch.crates-io]
 converge-core = { path = "../../bedrock-platform/converge/crates/core" }
-converge-kernel = { path = "../../bedrock-platform/converge/crates/kernel" }
 converge-model = { path = "../../bedrock-platform/converge/crates/model" }
 converge-optimization = { path = "../../bedrock-platform/converge/crates/optimization" }
 converge-pack = { path = "../../bedrock-platform/converge/crates/pack" }
