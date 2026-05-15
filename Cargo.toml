@@ -79,15 +79,6 @@ items_after_statements = "allow"
 return_self_not_must_use = "allow"
 # ML metric assertions compare exact-fixture floats; acceptable in this crate.
 float_cmp = "allow"
-
-[patch.crates-io]
-converge-core = { path = "../../bedrock-platform/converge/crates/core" }
-converge-model = { path = "../../bedrock-platform/converge/crates/model" }
-converge-optimization = { path = "../../bedrock-platform/converge/crates/optimization" }
-converge-pack = { path = "../../bedrock-platform/converge/crates/pack" }
-converge-provider = { path = "../../bedrock-platform/converge/crates/provider" }
-converge-storage = { path = "../../bedrock-platform/converge/crates/storage" }
-
 [profile.release]
 opt-level = 3
 lto = true
