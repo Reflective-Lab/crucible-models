@@ -12,7 +12,7 @@ use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::provenance::{CRUCIBLE_PROVENANCE, suggestor_span};
+use crate::provenance::CRUCIBLE_PROVENANCE;
 
 const DATASET_URL: &str = "https://huggingface.co/datasets/gvlassis/california_housing/resolve/refs%2Fconvert%2Fparquet/default/train/0000.parquet";
 const TARGET_COLUMN: &str = "median_house_value";
@@ -269,14 +269,11 @@ impl Suggestor for DataValidationAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Signals,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
@@ -373,14 +370,11 @@ impl Suggestor for FeatureEngineeringAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Constraints,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
@@ -477,14 +471,11 @@ impl Suggestor for HyperparameterSearchAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Evaluations,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
@@ -570,14 +561,11 @@ impl Suggestor for DatasetAgent {
         !ctx.has(ContextKey::Signals)
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Seeds,
-            ContextKey::Signals,
-            ctx.count(ContextKey::Seeds),
-        )
-        .entered();
         if let Err(err) = create_dir_all(&self.data_dir) {
             return AgentEffect::with_proposal(diagnostic(
                 self.name(),
@@ -718,14 +706,11 @@ impl Suggestor for ModelTrainingAgent {
         !has_model_for_iteration(ctx, split.iteration)
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Strategies,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
@@ -868,14 +853,11 @@ impl Suggestor for ModelRegistryAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Strategies,
-            ContextKey::Strategies,
-            ctx.count(ContextKey::Strategies),
-        )
-        .entered();
         let meta = match read_latest_model_meta_from_ctx(ctx) {
             Ok(meta) => meta,
             Err(err) => {
@@ -939,14 +921,11 @@ impl Suggestor for MonitoringAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Evaluations,
-            ContextKey::Evaluations,
-            ctx.count(ContextKey::Evaluations),
-        )
-        .entered();
         let report = match latest_evaluation_report(ctx, 0) {
             Some(report) => report,
             None => return AgentEffect::empty(),
@@ -1004,14 +983,11 @@ impl Suggestor for DeploymentAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Evaluations,
-            ContextKey::Strategies,
-            ctx.count(ContextKey::Evaluations),
-        )
-        .entered();
         let report = match latest_evaluation_report(ctx, 0) {
             Some(report) => report,
             None => return AgentEffect::empty(),
@@ -1062,14 +1038,11 @@ impl Suggestor for ModelEvaluationAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Evaluations,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {
@@ -1203,14 +1176,11 @@ impl Suggestor for SampleInferenceAgent {
             }
     }
 
+    fn provenance(&self) -> &'static str {
+        CRUCIBLE_PROVENANCE.as_str()
+    }
+
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
-        let _span = suggestor_span(
-            self.name(),
-            ContextKey::Signals,
-            ContextKey::Hypotheses,
-            ctx.count(ContextKey::Signals),
-        )
-        .entered();
         let split = match read_latest_split_from_ctx(ctx) {
             Ok(split) => split,
             Err(err) => {

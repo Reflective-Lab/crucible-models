@@ -7,20 +7,16 @@
 //! unchanged: `CRUCIBLE_PROVENANCE.proposed_fact(...)` reads exactly
 //! the same at call sites.
 //!
-//! The `converge-core` engine now emits a uniform `suggestor.execute`
-//! tracing span automatically around every `Suggestor::execute` call,
-//! with the suggestor name + provenance string + dependency keys as
-//! fields. Suggestors override `Suggestor::provenance()` to return
-//! `CRUCIBLE_PROVENANCE.as_str()` so the engine's span carries the
-//! right origin without each crate hand-rolling its own span helper.
-//!
-//! A `pub(crate)` `suggestor_span` legacy helper remains for the
-//! training-pipeline agents in [`crate::training`] until their per-agent
-//! migration to the engine span lands; it is intentionally not exposed
-//! on the public surface.
+//! The `converge-core` engine emits the uniform `suggestor.execute`
+//! tracing span automatically around every `Suggestor::execute`
+//! call, with the suggestor name + provenance string + dependency
+//! keys as fields. Suggestors override `Suggestor::provenance()` to
+//! return `CRUCIBLE_PROVENANCE.as_str()` so the engine's span
+//! carries the right origin. The previous transitional
+//! `suggestor_span` helper has been deleted — every crucible
+//! Suggestor now relies on the engine span exclusively.
 
-use converge_pack::{ContextKey, ProvenanceSource};
-use tracing::info_span;
+use converge_pack::ProvenanceSource;
 
 /// Marker type identifying crucible-emitted facts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -36,32 +32,10 @@ impl ProvenanceSource for Crucible {
 /// proposals: `CRUCIBLE_PROVENANCE.proposed_fact(key, id, payload)`.
 pub const CRUCIBLE_PROVENANCE: Crucible = Crucible;
 
-/// Legacy per-crate suggestor span helper.
-///
-/// Internal-only. The engine emits the canonical `suggestor.execute`
-/// span automatically; this helper exists only so the training-pipeline
-/// agents in [`crate::training`] keep compiling until their per-agent
-/// migration to the engine span lands. New code does not call this.
-pub(crate) fn suggestor_span(
-    name: &str,
-    input_key: ContextKey,
-    output_key: ContextKey,
-    input_count: usize,
-) -> tracing::Span {
-    info_span!(
-        "crucible.suggestor.execute",
-        provenance = CRUCIBLE_PROVENANCE.as_str(),
-        suggestor = name,
-        input_key = ?input_key,
-        output_key = ?output_key,
-        input_count
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use converge_pack::TextPayload;
+    use converge_pack::{ContextKey, TextPayload};
 
     #[test]
     fn provenance_string_is_stable() {
