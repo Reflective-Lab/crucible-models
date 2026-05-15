@@ -34,4 +34,14 @@
 //! dimension.  Gradient boosting uses differentiable loss functions; Burn's
 //! autodiff backend makes the gradient computation explicit and auditable.
 //!
-//! ## Status: not yet implemented
+//! ## Status
+//!
+//! - `random_forest` — scaffolded with the `ClassifierModel` trait shape,
+//!   bincode-serializable artifact, and unit tests. Stub training body
+//!   returns the dominant class; real CART-bagging implementation is the
+//!   next slice. Pulled by the loan-application showcase.
+//! - Gradient-boosted trees — not yet implemented.
+
+pub mod random_forest;
+
+pub use random_forest::{RandomForestConfig, RandomForestModel};

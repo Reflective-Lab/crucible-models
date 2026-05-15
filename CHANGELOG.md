@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `crucible::model::ClassifierModel` trait — narrow classifier surface
+  (`train`, `n_classes`, `predict`, `predict_proba`, `save`, `load`)
+  shared by every fact-emitting pack in the crate. A companion
+  `RegressorModel` will land when a continuous-target app pulls.
+- `crucible::ensembles::random_forest::RandomForestModel` and
+  `RandomForestConfig` — scaffolded implementation of `ClassifierModel`
+  with bincode-serializable artifacts, input validation, and unit tests
+  (5 new). The training body is a stub that records the dominant class
+  observed during training and returns it for every sample with uniform
+  per-class probabilities; sufficient to prove the trait shape and
+  artifact round-trip. The real bagging-of-CART-trees implementation is
+  the next slice (slice 2b) and is pulled by the loan-application
+  showcase.
 - Lifted the training pipeline and supporting data plumbing from
   `prism-analytics` into crucible, restoring the prism / crucible boundary
   (prism = closed-form inference with hand-authored rules; crucible = trained

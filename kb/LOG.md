@@ -3,6 +3,16 @@ source: human
 ---
 # Session Log
 
+## 2026-05-15
+
+- Added `crucible::model::ClassifierModel` trait (`train` / `n_classes` /
+  `predict` / `predict_proba` / `save` / `load`).
+- Added `crucible::ensembles::random_forest::RandomForestModel` and
+  `RandomForestConfig` as the first concrete `ClassifierModel`
+  implementation. Training body is a dominant-class stub; real
+  bagging-of-CART-trees implementation lands in slice 2b. 5 unit tests
+  pass, bincode round-trip verified.
+
 ## 2026-05-14
 
 - Lifted the training pipeline and supporting data plumbing from

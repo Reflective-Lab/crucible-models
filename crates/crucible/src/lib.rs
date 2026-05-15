@@ -30,6 +30,7 @@
 
 pub mod ensembles;
 pub mod ingest;
+pub mod model;
 pub mod neuro_fuzzy;
 pub mod provenance;
 #[cfg(feature = "storage")]
@@ -38,6 +39,8 @@ pub mod svm;
 pub mod training;
 pub mod trees;
 
+pub use ensembles::{RandomForestConfig, RandomForestModel};
+pub use model::ClassifierModel;
 pub use provenance::{CRUCIBLE_PROVENANCE, ProvenanceSource, UnknownProvenanceSource};
 pub use training::{
     DataValidationAgent, DatasetAgent, DeploymentAgent, FeatureEngineeringAgent,
