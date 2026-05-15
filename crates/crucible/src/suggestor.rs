@@ -5,10 +5,11 @@
 //! The Suggestor reads `ClassificationFeaturesPayload`s from its
 //! configured input `ContextKey`, runs `predict_proba` on the loaded
 //! model, and emits a `ClassPredictionPayload` per input under its
-//! configured output key with `ProvenanceSource::Crucible`. Each
-//! `Suggestor::execute` call is wrapped in a `crucible.suggestor.execute`
-//! tracing span carrying provenance, suggestor name, input/output
-//! keys, and input count.
+//! configured output key with [`CRUCIBLE_PROVENANCE`]. The
+//! `converge-core` engine emits a uniform `suggestor.execute`
+//! tracing span around every `Suggestor::execute` call carrying
+//! the suggestor's `name()`, `provenance()`, and `dependencies()`
+//! as fields.
 //!
 //! `ClassifierSuggestor` is generic over the concrete model type. The
 //! re-exported aliases [`crate::DecisionTreeClassifierSuggestor`] and
