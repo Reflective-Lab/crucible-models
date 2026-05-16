@@ -28,12 +28,20 @@ jobs:
         with:
           tool: cargo-llvm-cov
       - name: Generate coverage
-        # Excludes test, bench, example, fixture, and binary-entry-point dirs
-        # so coverage reflects the unit-reach of the library code we ship,
-        # not transport-shaped wrappers that integration tests exercise.
+        # Excludes test, bench, example dirs, binary-entry-point modules
+        # (CLIs in `bin/` and any `main.rs`/`suggestor.rs`), and the
+        # `fixtures` module which is itself test infrastructure. Binaries
+        # are exercised by integration-harness end-to-end runs, not by
+        # this crate's unit tests — including them depresses coverage
+        # without measuring anything that unit tests should reach.
+        #
+        # Note: `training.rs` is currently around 59% line / 38% function
+        # coverage. The pipeline agents (DatasetAgent, FeatureEngineeringAgent,
+        # ModelTrainingAgent, etc.) need dedicated intent-encoded tests —
+        # tracked separately, not addressed by tightening this regex.
         run: |
           cargo llvm-cov --workspace --lib --tests \
-            --ignore-filename-regex '(^|/)(tests|benches|examples|fixtures)/|(^|/)(main|suggestor)\.rs$' \
+            --ignore-filename-regex '(^|/)(tests|benches|examples)/|(^|/)bin/|(^|/)(main|suggestor)\.rs$|(^|/)fixtures\.rs$' \
             --json --summary-only --output-path coverage.json
       - name: Extract coverage percentage
         id: cov
