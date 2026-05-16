@@ -1,5 +1,16 @@
 # crucible-models
 
+[![CI](https://github.com/Reflective-Lab/crucible-models/actions/workflows/ci.yml/badge.svg)](https://github.com/Reflective-Lab/crucible-models/actions/workflows/ci.yml)
+[![Coverage](https://github.com/Reflective-Lab/crucible-models/actions/workflows/coverage.yml/badge.svg)](https://github.com/Reflective-Lab/crucible-models/actions/workflows/coverage.yml)
+[![Security](https://github.com/Reflective-Lab/crucible-models/actions/workflows/security.yml/badge.svg)](https://github.com/Reflective-Lab/crucible-models/actions/workflows/security.yml)
+[![Stability](https://github.com/Reflective-Lab/crucible-models/actions/workflows/stability.yml/badge.svg)](https://github.com/Reflective-Lab/crucible-models/actions/workflows/stability.yml)
+[![Crates.io](https://img.shields.io/crates/v/converge-crucible-models.svg)](https://crates.io/crates/converge-crucible-models)
+[![docs.rs](https://docs.rs/converge-crucible-models/badge.svg)](https://docs.rs/converge-crucible-models)
+[![dependency status](https://deps.rs/repo/github/Reflective-Lab/crucible-models/status.svg)](https://deps.rs/repo/github/Reflective-Lab/crucible-models)
+![MSRV](https://img.shields.io/badge/MSRV-1.94.0-blue)
+<img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Trained-model packs and training pipeline for the Converge Engine.**
 
 `crucible-models` is the companion to

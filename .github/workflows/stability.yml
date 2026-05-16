@@ -1,0 +1,33 @@
+name: Stability
+
+on:
+  schedule:
+    # Weekly Monday morning (6am UTC = 7am London). Catches advisory-db
+    # additions that were not yet present when the merge-time audit ran.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_VERSION: "1.94.0"
+
+jobs:
+  security-blocking:
+    name: Security Audit (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      - name: Run cargo-audit (blocking)
+        # Tighter ignore list than the merge-time `security.yml` — only
+        # advisories with an open mitigation plan stay ignored here. Each
+        # entry must be revisited weekly.
+        run: >
+          cargo audit --deny warnings
+          --ignore RUSTSEC-2025-0134
+          --ignore RUSTSEC-2025-0141
