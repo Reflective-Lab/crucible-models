@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/crucible"]
 
 [workspace.package]
-version = "0.2.2"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.94.0"
 license = "MIT"
@@ -29,9 +29,6 @@ ndarray-linfa = { package = "ndarray", version = "0.16" }
 # Data
 polars = { version = "0.51.0", features = ["csv", "lazy", "log", "ndarray", "parquet", "rows"] }
 calamine = "0.34"
-
-# Object storage (optional)
-converge-storage = { version = "3.9.1", default-features = false, features = ["polars"] }
 
 # Common
 anyhow = "1"

@@ -32,12 +32,8 @@ bincode.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 
-# Object storage (optional)
-converge-storage = { workspace = true, optional = true }
-
 [features]
 default = []
-storage = ["dep:converge-storage"]
 excel = ["dep:calamine"]
 
 [dev-dependencies]

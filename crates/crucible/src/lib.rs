@@ -34,8 +34,6 @@ pub mod ingest;
 pub mod model;
 pub mod neuro_fuzzy;
 pub mod provenance;
-#[cfg(feature = "storage")]
-pub mod storage;
 pub mod suggestor;
 pub mod svm;
 pub mod training;

@@ -7,17 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.2] - 2026-05-17
+## [0.3.0] - 2026-05-17
+
+### Removed (BREAKING)
+- `crucible::storage` module deleted. The Parquet/ObjectStore bridge
+  lives at `converge_storage::polars_bridge` (introduced in
+  `converge-storage 3.9.1`). Callers that previously imported
+  `crucible::storage::{fetch_parquet, fetch_to_cache,
+  write_parquet_to_store, scan_local_parquet}` must switch to
+  `converge_storage::polars_bridge::*` directly.
+
+  No deprecation shim is left behind — single-developer workspace, all
+  callers updated in this same commit, the old path is gone.
 
 ### Changed
-- `crucible::storage` is now a deprecation shim re-exporting
-  `converge_storage::polars_bridge::{fetch_parquet, fetch_to_cache,
-  write_parquet_to_store, scan_local_parquet}`. The implementation
-  moved to `converge-storage 3.9.1` so any extension that needs
-  Parquet from a remote `ObjectStore` (training pipelines, KB
-  persistence, app-level dataset ingest) shares a single source of
-  truth. The crucible-side `pub use` items carry
-  `#[deprecated(since = "0.2.2", ...)]` pointing at the new location.
 - `converge-pack` and `converge-optimization` pins bumped to `3.9.1`
   to align with the platform release that introduced
   `converge-storage::polars_bridge`.
