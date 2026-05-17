@@ -247,4 +247,113 @@ mod tests {
             .unwrap_err();
         assert!(err.to_string().contains("feature/label length mismatch"));
     }
+
+    #[test]
+    fn train_rejects_empty_labels() {
+        // Intent: an empty training set must fail loud at train-time;
+        // a tree with no leaves silently turns into a constant
+        // predictor that downstream metrics flag as 0 accuracy.
+        let features = Array2::<f64>::zeros((0, 1));
+        let labels = Array1::<usize>::zeros(0);
+        let err = DecisionTreeClassifier::train(&DecisionTreeConfig::default(), &features, &labels)
+            .unwrap_err();
+        assert!(err.to_string().contains("at least one labelled sample"));
+    }
+
+    #[test]
+    fn n_classes_reflects_label_max_plus_one() {
+        // Intent: `n_classes` shapes the probability matrix downstream;
+        // an off-by-one here makes `predict_proba` panic with shape
+        // mismatch when callers iterate 0..n_classes.
+        let (features, labels) = two_cluster_dataset(0);
+        let model =
+            DecisionTreeClassifier::train(&DecisionTreeConfig::default(), &features, &labels)
+                .unwrap();
+        assert_eq!(model.n_classes(), 2);
+    }
+
+    #[test]
+    fn execution_identity_stamps_backend_and_runtime_config() {
+        // Intent: ferrox + soter audit trails read `execution_identity`
+        // to answer "which model+hyperparams produced this row?". If
+        // the identity loses backend or runtime_config that audit
+        // breaks. The backend constant is the workspace's linfa pin.
+        let (features, labels) = two_cluster_dataset(2);
+        let model = DecisionTreeClassifier::train(
+            &DecisionTreeConfig {
+                max_depth: Some(3),
+                min_weight_split: 2.0,
+            },
+            &features,
+            &labels,
+        )
+        .unwrap();
+        let id = model.execution_identity();
+        assert_eq!(id.backend, DT_BACKEND);
+        assert!(
+            id.runtime_config.contains("max_depth"),
+            "runtime_config should serialize hyperparams; got {}",
+            id.runtime_config
+        );
+    }
+
+    #[test]
+    fn load_returns_err_on_missing_file() {
+        // Intent: `load` must propagate I/O failures rather than
+        // silently return a default model that would then predict
+        // garbage in production.
+        let err = DecisionTreeClassifier::load(std::path::Path::new(
+            "/tmp/this/path/definitely/does/not/exist/dt.bin",
+        ))
+        .unwrap_err();
+        assert!(err.to_string().contains("reading"));
+    }
+
+    #[test]
+    fn load_returns_err_on_corrupted_artifact() {
+        // Intent: corrupted bincode must error, not panic. A panic
+        // here would crash the loading suggestor and stall the
+        // engine.
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(tmp.path(), b"not bincode at all").unwrap();
+        let err = DecisionTreeClassifier::load(tmp.path()).unwrap_err();
+        assert!(err.to_string().contains("deserializing"));
+    }
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn predict_proba_rows_are_one_hot(seed in 0u64..20) {
+            // Intent: a single CART tree is a leaf -> one class. If
+            // predict_proba ever returns a non-one-hot row, downstream
+            // consumers that interpret it as a probability distribution
+            // will rank labels incorrectly.
+            let (features, labels) = two_cluster_dataset(seed);
+            let model =
+                DecisionTreeClassifier::train(&DecisionTreeConfig::default(), &features, &labels)
+                    .unwrap();
+            let proba = model.predict_proba(&features).unwrap();
+            for row in proba.rows() {
+                let s: f64 = row.iter().sum();
+                prop_assert!((s - 1.0).abs() < 1e-9, "row sum {} != 1.0", s);
+                let n_ones = row.iter().filter(|&&v| v == 1.0).count();
+                prop_assert_eq!(n_ones, 1, "must be one-hot");
+            }
+        }
+
+        #[test]
+        fn predict_is_deterministic_under_same_input(seed in 0u64..20) {
+            // Intent: deterministic prediction is a hard requirement
+            // for replay / audit. Any nondeterminism here breaks
+            // ferrox's "replay this prediction" gate.
+            let (features, labels) = two_cluster_dataset(seed);
+            let model =
+                DecisionTreeClassifier::train(&DecisionTreeConfig::default(), &features, &labels)
+                    .unwrap();
+            let p1 = model.predict(&features).unwrap();
+            let p2 = model.predict(&features).unwrap();
+            prop_assert_eq!(p1, p2);
+        }
+    }
 }

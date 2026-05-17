@@ -1439,6 +1439,7 @@ dependencies = [
  "calamine",
  "converge-optimization",
  "converge-pack",
+ "futures",
  "linfa",
  "linfa-trees",
  "ndarray 0.16.1",

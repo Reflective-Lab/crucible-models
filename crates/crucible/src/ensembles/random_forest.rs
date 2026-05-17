@@ -360,4 +360,131 @@ mod tests {
         .unwrap_err();
         assert!(err.to_string().contains("n_trees must be >= 1"));
     }
+
+    #[test]
+    fn n_classes_reflects_label_max_plus_one() {
+        // Intent: n_classes drives the probability matrix shape;
+        // off-by-one here breaks predict_proba's allocation.
+        let (features, labels) = two_cluster_dataset(0);
+        let model = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 3,
+                ..RandomForestConfig::default()
+            },
+            &features,
+            &labels,
+        )
+        .unwrap();
+        assert_eq!(model.n_classes(), 2);
+    }
+
+    #[test]
+    fn execution_identity_stamps_backend_and_runtime_config() {
+        // Intent: ferrox / soter audit gates read execution_identity to
+        // answer "which model+hyperparams emitted this row?". A missing
+        // backend or empty runtime_config breaks that audit chain.
+        let (features, labels) = two_cluster_dataset(1);
+        let model = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 3,
+                max_depth: Some(4),
+                min_weight_split: 2.0,
+                random_seed: 99,
+            },
+            &features,
+            &labels,
+        )
+        .unwrap();
+        let id = model.execution_identity();
+        assert_eq!(id.backend, RF_BACKEND);
+        assert!(
+            id.runtime_config.contains("n_trees"),
+            "runtime_config must serialize hyperparams; got {}",
+            id.runtime_config
+        );
+        assert_eq!(id.producer.name, env!("CARGO_PKG_NAME"));
+    }
+
+    #[test]
+    fn predict_proba_errors_on_unfit_model() {
+        // Intent: defending against an unfit-model code path is cheap
+        // insurance; without it a deserialization regression could
+        // silently produce zero-vote rows.
+        let (features, _) = two_cluster_dataset(0);
+        let mut model = RandomForestModel::train(
+            &RandomForestConfig {
+                n_trees: 1,
+                ..RandomForestConfig::default()
+            },
+            &features,
+            &Array1::from_vec(vec![0; features.nrows()]),
+        )
+        .unwrap();
+        // Forcibly clear the trees to simulate unfit / corrupted state.
+        model.trees.clear();
+        let err = model.predict_proba(&features).unwrap_err();
+        assert!(err.to_string().contains("unfit"));
+    }
+
+    #[test]
+    fn load_returns_err_on_missing_file() {
+        let err = RandomForestModel::load(std::path::Path::new(
+            "/tmp/this/path/definitely/does/not/exist/rf.bin",
+        ))
+        .unwrap_err();
+        assert!(err.to_string().contains("reading"));
+    }
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn predict_proba_rows_sum_to_one_for_any_seed(seed in 0u64..40, n_trees in 1usize..15) {
+            // Intent: probabilities not summing to 1 corrupts every
+            // downstream rank-by-score consumer (e.g. top-k routing).
+            let (features, labels) = two_cluster_dataset(seed);
+            let model = RandomForestModel::train(
+                &RandomForestConfig {
+                    n_trees,
+                    max_depth: Some(3),
+                    min_weight_split: 2.0,
+                    random_seed: seed,
+                },
+                &features,
+                &labels,
+            )
+            .unwrap();
+            let proba = model.predict_proba(&features).unwrap();
+            for row in proba.axis_iter(Axis(0)) {
+                let s: f64 = row.iter().sum();
+                prop_assert!((s - 1.0).abs() < 1e-9, "row sum {} != 1.0", s);
+                for &p in row {
+                    prop_assert!((0.0..=1.0).contains(&p), "p={} out of [0,1]", p);
+                }
+            }
+        }
+
+        #[test]
+        fn save_load_roundtrip_preserves_predictions_under_seed(seed in 0u64..20) {
+            // Intent: an artifact must replay bit-for-bit. Any
+            // serde-version drift that breaks this invariant breaks
+            // every audit-replay use case.
+            let (features, labels) = two_cluster_dataset(seed);
+            let model = RandomForestModel::train(
+                &RandomForestConfig {
+                    n_trees: 3,
+                    ..RandomForestConfig::default()
+                },
+                &features,
+                &labels,
+            )
+            .unwrap();
+            let tmp = tempfile::NamedTempFile::new().unwrap();
+            model.save(tmp.path()).unwrap();
+            let loaded = RandomForestModel::load(tmp.path()).unwrap();
+            let p1 = model.predict_proba(&features).unwrap();
+            let p2 = loaded.predict_proba(&features).unwrap();
+            prop_assert_eq!(p1, p2);
+        }
+    }
 }

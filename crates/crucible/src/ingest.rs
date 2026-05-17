@@ -369,4 +369,97 @@ mod tests {
         assert_eq!(summary.columns.len(), 2);
         assert_eq!(summary.columns[0].name, "name");
     }
+
+    #[test]
+    fn read_file_dispatches_csv() {
+        // Intent: `read_file` is the public dispatcher — if it stops
+        // routing .csv to read_csv (or any other branch), callers see
+        // an UnsupportedFormat error even though support exists.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dispatch.csv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "a,b").unwrap();
+        writeln!(f, "1,2").unwrap();
+        let df = read_file(&path).unwrap();
+        assert_eq!(df.height(), 1);
+        assert_eq!(df.width(), 2);
+    }
+
+    #[test]
+    fn read_file_dispatches_tsv() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dispatch.tsv");
+        let mut f = std::fs::File::create(&path).unwrap();
+        writeln!(f, "a\tb").unwrap();
+        writeln!(f, "1\t2").unwrap();
+        let df = read_file(&path).unwrap();
+        assert_eq!(df.height(), 1);
+    }
+
+    #[test]
+    fn read_file_dispatches_parquet() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dispatch.parquet");
+        let mut df = df! { "a" => &[1i64, 2] }.unwrap();
+        let file = std::fs::File::create(&path).unwrap();
+        ParquetWriter::new(file).finish(&mut df).unwrap();
+        let loaded = read_file(&path).unwrap();
+        assert_eq!(loaded.height(), 2);
+    }
+
+    #[test]
+    #[cfg(not(feature = "excel"))]
+    fn read_file_excel_errors_without_feature() {
+        // Intent: silently returning an empty DataFrame for an Excel
+        // path when the feature is off would corrupt the next stage —
+        // it must error so the caller knows to rebuild with the
+        // feature flag.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dispatch.xlsx");
+        std::fs::write(&path, b"not real").unwrap();
+        let err = read_file(&path).unwrap_err();
+        assert!(err.to_string().contains("excel"));
+    }
+
+    #[test]
+    fn read_file_errors_on_unsupported_extension() {
+        // Intent: a typo'd extension must not silently fall through to
+        // a CSV reader; the explicit unsupported-format error is the
+        // only signal a caller has to fix their pipeline.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dispatch.weirdext");
+        std::fs::write(&path, b"a,b\n1,2").unwrap();
+        let err = read_file(&path).unwrap_err();
+        assert!(err.to_string().contains("unsupported file format"));
+    }
+
+    #[test]
+    fn ingest_format_pq_extension_maps_to_parquet() {
+        // Intent: callers who use the conventional `.pq` short
+        // extension expect Parquet handling; losing this alias would
+        // break any pipeline that writes `.pq` artifacts.
+        assert_eq!(
+            IngestFormat::from_path(Path::new("data.pq")).unwrap(),
+            IngestFormat::Parquet
+        );
+    }
+
+    #[test]
+    fn ingest_format_unknown_extension_returns_helpful_error() {
+        // Intent: the error message must enumerate supported formats so
+        // the caller can fix their pipeline without grepping source.
+        let err = IngestFormat::from_path(Path::new("data.bin")).unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("csv"));
+        assert!(msg.contains("parquet"));
+        assert!(msg.contains(".bin"));
+    }
+
+    #[test]
+    fn read_parquet_errors_on_nonexistent_file() {
+        // Intent: missing file must surface as an error, not a hidden
+        // empty DataFrame.
+        let err = read_parquet(Path::new("/nonexistent/dir/no.parquet"));
+        assert!(err.is_err());
+    }
 }

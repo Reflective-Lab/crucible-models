@@ -43,7 +43,7 @@ coverage:
     out_dir="target/coverage"
     mkdir -p "${out_dir}/html"
     common=(--workspace --lib --tests
-        --ignore-filename-regex '(^|/)(tests|benches|examples)/')
+        --ignore-filename-regex '(^|/)(tests|benches|examples|bin)/')
     cargo llvm-cov clean --workspace
     rm -rf target/tests/trybuild
     cargo llvm-cov "${common[@]}" --no-report

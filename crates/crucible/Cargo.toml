@@ -38,6 +38,12 @@ excel = ["dep:calamine"]
 
 [dev-dependencies]
 tempfile.workspace = true
+# Tests that drive an `async` Suggestor::execute over polars I/O need a
+# block_on that *does not* register a tokio runtime — polars' interior
+# parquet reader unconditionally tries to spin up its own tokio runtime
+# and panics if one is already on the stack. `futures::executor::block_on`
+# provides a runtime-free driver that satisfies that constraint.
+futures = "0.3"
 
 [lints]
 workspace = true
