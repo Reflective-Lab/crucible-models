@@ -18,7 +18,7 @@ Read and follow `AGENTS.md` — it is the canonical project documentation.
 
 This extension targets:
 
-- Converge >= 3.8.1
+- Converge >= 3.9.1
 - Burn >= 0.20.0
 - MSRV 1.94.0
 - Edition 2024
