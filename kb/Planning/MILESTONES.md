@@ -70,6 +70,34 @@ classic bootstrap bagging. Trait shape and artifact format are
 unchanged when feature subsampling is added. Re-open when an app
 pulls on the additional variance reduction.
 
+## v0.2.1 — Typed runtime config — shipped 2026-05-15
+
+- [x] Adopt `ExecutionIdentity::runtime_config_from_typed` for model
+      hyperparameters at the `ProposedFact` boundary.
+
+## v0.2.2 — converge-storage cutover — shipped 2026-05-15
+
+- [x] Migrate Parquet/ObjectStore bridge consumers to
+      `converge-storage::polars_bridge`.
+
+## v0.3.0 — Storage module removal — shipped 2026-05-17
+
+- [x] Delete `crucible::storage` module (BREAKING). All callers move to
+      `converge_storage::polars_bridge::*` in the same commit; no shim.
+- [x] Bump `converge-pack` / `converge-optimization` pins to `3.9.1`.
+- [x] Untrack `target/` build artifacts that pre-dated `.gitignore`.
+- [x] Back-port the 5-gate `release-check` recipe + coverage /
+      performance-profile / soak recipes from the converge-extension
+      template (crucible previously shipped without these gates).
+- [x] First publish to crates.io at `v0.3.0` (prior 0.2.x patch
+      releases were tagged but never published).
+
+**Coverage caveat:** Coverage was 66.3% at release time. `just coverage`
+template floor is 80%; CI floor is 70%. v0.3.0 shipped with
+`COVERAGE_FLOOR=66` as a one-time local override; CI floor was NOT
+changed. Restoring crucible coverage to ≥70% (to clear the CI gate
+naturally) is tracked as a follow-up before v0.3.1.
+
 ## Next slices — pull-driven
 
 The remaining capability work is now ordered by which

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2026-05-17
 
+### Note on release-check
+
+Back-ported the 5-gate `release-check` template (security-audit,
+coverage, performance-profile, soak, lint, test); crucible previously
+shipped without these gates. Coverage measured at 66.3% at release
+time, below both the template default (80%) and CI floor (70%).
+v0.3.0 shipped with a one-time `COVERAGE_FLOOR=66` local override.
+Restoring crucible coverage to ≥70% is tracked as a follow-up.
+
 ### Removed (BREAKING)
 - `crucible::storage` module deleted. The Parquet/ObjectStore bridge
   lives at `converge_storage::polars_bridge` (introduced in
