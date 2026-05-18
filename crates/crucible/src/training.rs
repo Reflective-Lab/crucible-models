@@ -63,10 +63,10 @@ pub struct TrainingPlan {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct DatasetSplit {
-    pub source_path: String,
-    pub train_path: String,
-    pub val_path: String,
-    pub infer_path: String,
+    pub source_path: PathBuf,
+    pub train_path: PathBuf,
+    pub val_path: PathBuf,
+    pub infer_path: PathBuf,
     pub total_rows: usize,
     pub max_rows: usize,
     pub train_rows: usize,
@@ -85,7 +85,7 @@ pub struct BaselineModel {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ModelMetadata {
-    pub model_path: String,
+    pub model_path: PathBuf,
     pub target_column: String,
     pub train_rows: usize,
     pub baseline_mean: f64,
@@ -95,7 +95,7 @@ pub struct ModelMetadata {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct EvaluationReport {
-    pub model_path: String,
+    pub model_path: PathBuf,
     pub metric: String,
     pub value: f64,
     pub mean_abs_target: f64,
@@ -107,7 +107,7 @@ pub struct EvaluationReport {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct InferenceSample {
-    pub model_path: String,
+    pub model_path: PathBuf,
     pub target_column: String,
     pub rows: usize,
     pub predictions: Vec<f64>,
@@ -120,7 +120,7 @@ pub struct InferenceSample {
 pub struct DataQualityReport {
     pub kind: String,
     pub iteration: usize,
-    pub source_path: String,
+    pub source_path: PathBuf,
     pub rows_checked: usize,
     pub missingness: HashMap<String, f64>,
     pub numeric_means: HashMap<String, f64>,
@@ -173,7 +173,7 @@ pub struct HyperparameterSearchResult {
 pub struct ModelRegistryRecord {
     pub kind: String,
     pub iteration: usize,
-    pub model_path: String,
+    pub model_path: PathBuf,
     pub metrics: HashMap<String, f64>,
     pub provenance: String,
 }
@@ -286,7 +286,7 @@ impl Suggestor for DataValidationAgent {
             }
         };
 
-        let df = match load_dataframe(Path::new(&split.train_path)) {
+        let df = match load_dataframe(&split.train_path) {
             Ok(df) => df,
             Err(err) => {
                 return AgentEffect::with_proposal(diagnostic(
@@ -387,7 +387,7 @@ impl Suggestor for FeatureEngineeringAgent {
             }
         };
 
-        let df = match load_dataframe(Path::new(&split.train_path)) {
+        let df = match load_dataframe(&split.train_path) {
             Ok(df) => df,
             Err(err) => {
                 return AgentEffect::with_proposal(diagnostic(
@@ -649,10 +649,10 @@ impl Suggestor for DatasetAgent {
         }
 
         let split = DatasetSplit {
-            source_path: dataset_path.to_string_lossy().to_string(),
-            train_path: train_path.to_string_lossy().to_string(),
-            val_path: val_path.to_string_lossy().to_string(),
-            infer_path: infer_path.to_string_lossy().to_string(),
+            source_path: dataset_path,
+            train_path,
+            val_path,
+            infer_path,
             total_rows,
             max_rows,
             train_rows,
@@ -732,7 +732,7 @@ impl Suggestor for ModelTrainingAgent {
             ));
         }
 
-        let raw_train_df = match load_dataframe(Path::new(&split.train_path)) {
+        let raw_train_df = match load_dataframe(&split.train_path) {
             Ok(df) => df,
             Err(err) => {
                 return AgentEffect::with_proposal(diagnostic(
@@ -800,7 +800,7 @@ impl Suggestor for ModelTrainingAgent {
         }
 
         let meta = ModelMetadata {
-            model_path: model_path.to_string_lossy().to_string(),
+            model_path,
             target_column: target_name,
             train_rows: split.train_rows,
             baseline_mean: mean,
@@ -1067,7 +1067,7 @@ impl Suggestor for ModelEvaluationAgent {
             }
         };
 
-        let raw_val_df = match load_dataframe(Path::new(&split.val_path)) {
+        let raw_val_df = match load_dataframe(&split.val_path) {
             Ok(df) => df,
             Err(err) => {
                 return AgentEffect::with_proposal(diagnostic(
@@ -1205,7 +1205,7 @@ impl Suggestor for SampleInferenceAgent {
             }
         };
 
-        let infer_df = match load_dataframe(Path::new(&split.infer_path)) {
+        let infer_df = match load_dataframe(&split.infer_path) {
             Ok(df) => df,
             Err(err) => {
                 return AgentEffect::with_proposal(diagnostic(
@@ -1336,7 +1336,7 @@ fn read_latest_split_from_ctx(ctx: &dyn Context) -> Result<DatasetSplit> {
     latest.ok_or_else(|| anyhow!("missing dataset split"))
 }
 
-fn read_model_path_from_ctx(ctx: &dyn Context) -> Result<String> {
+fn read_model_path_from_ctx(ctx: &dyn Context) -> Result<PathBuf> {
     let meta = read_latest_model_meta_from_ctx(ctx)?;
     Ok(meta.model_path)
 }

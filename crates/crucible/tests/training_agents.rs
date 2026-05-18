@@ -62,10 +62,10 @@ fn make_split_for(dir: &std::path::Path, iteration: usize) -> (DatasetSplit, std
     let val = make_training_df(dir, "val.parquet", 10);
     let infer = make_training_df(dir, "infer.parquet", 5);
     let split = DatasetSplit {
-        source_path: train.to_string_lossy().to_string(),
-        train_path: train.to_string_lossy().to_string(),
-        val_path: val.to_string_lossy().to_string(),
-        infer_path: infer.to_string_lossy().to_string(),
+        source_path: train.clone(),
+        train_path: train.clone(),
+        val_path: val,
+        infer_path: infer,
         total_rows: 35,
         max_rows: 35,
         train_rows: 20,
@@ -364,7 +364,7 @@ fn model_training_agent_trains_baseline_and_emits_metadata() {
     assert!(meta.baseline_mean.is_finite());
     // Artifact must actually exist on disk — a metadata fact pointing
     // at a missing file is the worst kind of audit-graph lie.
-    assert!(std::path::Path::new(&meta.model_path).exists());
+    assert!(meta.model_path.exists());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -404,7 +404,7 @@ fn model_evaluation_agent_emits_evaluation_report() {
     let mut ctx = MockContext::empty();
     ctx.insert(ContextKey::Signals, "split-2", split);
     let meta = ModelMetadata {
-        model_path: model_path.to_string_lossy().to_string(),
+        model_path,
         target_column: "median_house_value".into(),
         train_rows: 20,
         baseline_mean: 100.0,
@@ -693,7 +693,7 @@ fn sample_inference_agent_emits_predictions() {
     let mut ctx = MockContext::empty();
     ctx.insert(ContextKey::Signals, "split-1", split);
     let meta = ModelMetadata {
-        model_path: model_path.to_string_lossy().to_string(),
+        model_path,
         target_column: "median_house_value".into(),
         train_rows: 20,
         baseline_mean: 100.0,
