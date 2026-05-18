@@ -61,10 +61,11 @@ pub struct DecisionTreeClassifier {
     tree: DecisionTree<f64, usize>,
 }
 
-fn to_linfa_features(arr: &Array2<f64>) -> ndl::Array2<f64> {
+fn to_linfa_features(arr: &Array2<f64>) -> Result<ndl::Array2<f64>> {
     let (rows, cols) = arr.dim();
     let data: Vec<f64> = arr.iter().copied().collect();
-    ndl::Array2::from_shape_vec((rows, cols), data).expect("shape known correct from source array")
+    ndl::Array2::from_shape_vec((rows, cols), data)
+        .context("constructing linfa feature array from ndarray input")
 }
 
 impl ClassifierModel for DecisionTreeClassifier {
@@ -88,7 +89,7 @@ impl ClassifierModel for DecisionTreeClassifier {
 
         let n_classes = labels.iter().copied().max().map_or(0, |m| m + 1);
 
-        let feat_linfa = to_linfa_features(features);
+        let feat_linfa = to_linfa_features(features)?;
         let lab_linfa = ndl::Array1::from_vec(labels.iter().copied().collect());
         let dataset = Dataset::new(feat_linfa, lab_linfa);
 
@@ -110,7 +111,7 @@ impl ClassifierModel for DecisionTreeClassifier {
     }
 
     fn predict(&self, features: &Array2<f64>) -> Result<Array1<usize>> {
-        let features_linfa = to_linfa_features(features);
+        let features_linfa = to_linfa_features(features)?;
         let preds_linfa: ndl::Array1<usize> = self.tree.predict(&features_linfa);
         Ok(Array1::from_vec(preds_linfa.to_vec()))
     }
@@ -145,12 +146,11 @@ impl ClassifierModel for DecisionTreeClassifier {
     }
 
     fn execution_identity(&self) -> ExecutionIdentity {
-        let runtime_config = serde_json::to_string(&self.config).unwrap_or_default();
         ExecutionIdentity::non_native(
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
             DT_BACKEND,
-            runtime_config,
+            ExecutionIdentity::runtime_config_from_typed(&self.config),
         )
     }
 }

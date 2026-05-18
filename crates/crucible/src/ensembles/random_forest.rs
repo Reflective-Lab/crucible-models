@@ -76,10 +76,11 @@ pub struct RandomForestModel {
     trees: Vec<DecisionTree<f64, usize>>,
 }
 
-fn to_linfa_features(arr: &Array2<f64>) -> ndl::Array2<f64> {
+fn to_linfa_features(arr: &Array2<f64>) -> Result<ndl::Array2<f64>> {
     let (rows, cols) = arr.dim();
     let data: Vec<f64> = arr.iter().copied().collect();
-    ndl::Array2::from_shape_vec((rows, cols), data).expect("shape known correct from source array")
+    ndl::Array2::from_shape_vec((rows, cols), data)
+        .context("constructing linfa feature array from ndarray input")
 }
 
 impl ClassifierModel for RandomForestModel {
@@ -126,7 +127,13 @@ impl ClassifierModel for RandomForestModel {
                 label_data.push(labels[i]);
             }
             let feat = ndl::Array2::from_shape_vec((n_samples, n_features), feat_data)
-                .expect("bootstrap shape correct by construction");
+                .with_context(|| {
+                    format!(
+                        "constructing bootstrap feature matrix for tree {tree_idx} \
+                         (shape {}×{})",
+                        n_samples, n_features,
+                    )
+                })?;
             let lab = ndl::Array1::from_vec(label_data);
 
             let dataset = Dataset::new(feat, lab);
@@ -174,7 +181,7 @@ impl ClassifierModel for RandomForestModel {
             "predict_proba called on an unfit RandomForestModel"
         );
 
-        let features_linfa = to_linfa_features(features);
+        let features_linfa = to_linfa_features(features)?;
         let n = features.nrows();
         let mut votes = Array2::<f64>::zeros((n, self.n_classes.max(1)));
 
