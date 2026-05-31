@@ -1,6 +1,6 @@
 // Copyright 2024-2026 Reflective Labs
 
-use converge_pack::{AgentEffect, Context, ContextKey, ProvenanceSource, Suggestor};
+use converge_pack::{AgentEffect, Context, ContextKey, Provenance, ProvenanceSource, Suggestor};
 use std::collections::HashMap;
 
 use crate::provenance::CRUCIBLE_PROVENANCE;
@@ -44,8 +44,8 @@ impl Suggestor for ModelEvaluationAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -182,8 +182,8 @@ impl Suggestor for SampleInferenceAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -298,8 +298,8 @@ impl Suggestor for ModelRegistryAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -366,8 +366,8 @@ impl Suggestor for MonitoringAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -428,8 +428,8 @@ impl Suggestor for DeploymentAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {

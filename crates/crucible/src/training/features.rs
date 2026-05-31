@@ -1,14 +1,14 @@
 // Copyright 2024-2026 Reflective Labs
 
 use anyhow::{Context as _, Result, anyhow};
-use converge_pack::{AgentEffect, Context, ContextKey, ProvenanceSource, Suggestor};
+use converge_pack::{AgentEffect, Context, ContextKey, Provenance, ProvenanceSource, Suggestor};
 use polars::prelude::*;
 
 use crate::provenance::CRUCIBLE_PROVENANCE;
 
 use super::io::{
-    compute_mean_std, compute_numeric_stats, is_numeric_dtype, load_dataframe, select_target_column,
-    split_feature_columns,
+    compute_mean_std, compute_numeric_stats, is_numeric_dtype, load_dataframe,
+    select_target_column, split_feature_columns,
 };
 use super::types::{
     DataQualityReport, FeatureInteraction, FeatureSpec, HyperparameterSearchPlan,
@@ -47,8 +47,8 @@ impl Suggestor for DataValidationAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -148,8 +148,8 @@ impl Suggestor for FeatureEngineeringAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -249,8 +249,8 @@ impl Suggestor for HyperparameterSearchAgent {
             }
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -342,7 +342,7 @@ pub fn apply_feature_spec(df: &DataFrame, spec: &FeatureSpec) -> Result<DataFram
                 // Safe division: use map to handle division safely
                 left_vals
                     .into_iter()
-                    .zip(right_vals.into_iter())
+                    .zip(right_vals)
                     .map(|(l, r)| match (l, r) {
                         (Some(lv), Some(rv)) if rv.abs() > 1e-10 => Some(lv / rv),
                         _ => None,

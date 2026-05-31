@@ -17,7 +17,7 @@ use std::io::Write;
 
 use converge_pack::{ContextKey, DiagnosticPayload, Suggestor};
 use crucible::training::{
-    BaselineModel, DataQualityReport, DatasetAgent, DatasetSplit, DataValidationAgent,
+    BaselineModel, DataQualityReport, DataValidationAgent, DatasetAgent, DatasetSplit,
     DeploymentAgent, DeploymentDecision, EvaluationReport, FeatureEngineeringAgent, FeatureSpec,
     HyperparameterSearchAgent, HyperparameterSearchResult, InferenceSample, ModelEvaluationAgent,
     ModelMetadata, ModelRegistryAgent, ModelRegistryRecord, ModelTrainingAgent, MonitoringAgent,
@@ -101,7 +101,7 @@ fn data_validation_agent_emits_quality_report_for_real_split() {
     let agent = DataValidationAgent::new();
     assert_eq!(agent.name(), "DataValidationAgent");
     assert_eq!(agent.dependencies(), &[ContextKey::Signals]);
-    assert_eq!(agent.provenance(), "crucible");
+    assert_eq!(agent.provenance().as_str(), "crucible");
 
     let mut ctx = MockContext::empty();
     ctx.insert(ContextKey::Signals, "split-1", split);
@@ -302,7 +302,7 @@ async fn dataset_agent_metadata_and_accepts() {
     let agent = DatasetAgent::new(tmp.path().to_path_buf());
     assert_eq!(agent.name(), "DatasetAgent (HuggingFace)");
     assert_eq!(agent.dependencies(), &[ContextKey::Seeds]);
-    assert_eq!(agent.provenance(), "crucible");
+    assert_eq!(agent.provenance().as_str(), "crucible");
 
     let ctx_empty = MockContext::empty();
     assert!(

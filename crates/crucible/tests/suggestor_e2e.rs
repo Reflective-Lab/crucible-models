@@ -11,10 +11,9 @@ use std::sync::Arc;
 
 use converge_pack::{ContextKey, Suggestor};
 use crucible::{
-    ClassifierModel, ClassificationFeaturesPayload, ClassPredictionPayload,
+    ClassPredictionPayload, ClassificationFeaturesPayload, ClassifierModel,
     DecisionTreeClassifierSuggestor, RandomForestClassifierSuggestor, RandomForestConfig,
-    RandomForestModel,
-    fixtures::loan_default,
+    RandomForestModel, fixtures::loan_default,
 };
 use crucible::{DecisionTreeClassifier, DecisionTreeConfig};
 
@@ -78,10 +77,13 @@ async fn rf_suggestor_emits_one_prediction_per_features_fact() {
     );
     let _ = n_features;
 
-    assert!(sugg.accepts(&ctx), "accepts must be true when features present");
+    assert!(
+        sugg.accepts(&ctx),
+        "accepts must be true when features present"
+    );
     assert_eq!(sugg.name(), "rf-test");
     assert_eq!(sugg.dependencies(), &[ContextKey::Seeds]);
-    assert_eq!(sugg.provenance(), "crucible");
+    assert_eq!(sugg.provenance().as_str(), "crucible");
 
     let effect = sugg.execute(&ctx).await;
     let proposals = effect.proposals();

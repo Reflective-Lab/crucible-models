@@ -20,7 +20,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use converge_pack::{
-    AgentEffect, Context, ContextKey, FactPayload, ProposalId, ProvenanceSource, Suggestor,
+    AgentEffect, Context, ContextKey, FactPayload, ProposalId, Provenance, ProvenanceSource,
+    Suggestor,
 };
 use ndarray::Array2;
 use tracing::warn;
@@ -81,8 +82,8 @@ impl<M: ClassifierModel + Send + Sync + 'static> Suggestor for ClassifierSuggest
             .any(|fact| fact.payload::<ClassificationFeaturesPayload>().is_some())
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {

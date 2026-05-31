@@ -2,8 +2,7 @@
 
 use anyhow::{Result, anyhow};
 use converge_pack::{
-    Context, ContextKey, DiagnosticPayload, FactPayload, ProposalId, ProposedFact,
-    ProvenanceSource,
+    Context, ContextKey, DiagnosticPayload, FactPayload, ProposalId, ProposedFact, ProvenanceSource,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -278,7 +277,10 @@ pub(super) fn read_latest_plan_from_ctx(ctx: &dyn Context) -> Option<TrainingPla
     latest
 }
 
-pub(super) fn read_feature_spec_from_ctx(ctx: &dyn Context, iteration: usize) -> Option<FeatureSpec> {
+pub(super) fn read_feature_spec_from_ctx(
+    ctx: &dyn Context,
+    iteration: usize,
+) -> Option<FeatureSpec> {
     ctx.get(ContextKey::Constraints).iter().find_map(|fact| {
         fact.payload::<FeatureSpec>()
             .filter(|spec| spec.iteration == iteration)
@@ -356,7 +358,10 @@ pub(super) fn has_deployment_decision_for_iteration(ctx: &dyn Context, iteration
     })
 }
 
-pub(super) fn latest_evaluation_report(ctx: &dyn Context, iteration: usize) -> Option<EvaluationReport> {
+pub(super) fn latest_evaluation_report(
+    ctx: &dyn Context,
+    iteration: usize,
+) -> Option<EvaluationReport> {
     let mut latest: Option<EvaluationReport> = None;
     for fact in ctx.get(ContextKey::Evaluations) {
         if let Some(report) = fact.payload::<EvaluationReport>().cloned() {

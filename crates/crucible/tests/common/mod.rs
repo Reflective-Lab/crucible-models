@@ -9,11 +9,11 @@
 
 use std::collections::HashMap;
 
+use converge_pack::{ContentHash, Timestamp};
 use converge_pack::{
     Context, ContextFact, ContextKey, FactActor, FactActorKind, FactLocalTrace, FactPayload,
     FactPromotionRecord, FactTraceLink, FactValidationSummary,
 };
-use converge_pack::{ContentHash, Timestamp};
 
 /// Minimal `Context` implementation that holds owned `ContextFact`s in
 /// a per-key vector. Mirrors the shape used in

@@ -1,6 +1,6 @@
 // Copyright 2024-2026 Reflective Labs
 
-use converge_pack::{AgentEffect, Context, ContextKey, ProvenanceSource, Suggestor};
+use converge_pack::{AgentEffect, Context, ContextKey, Provenance, ProvenanceSource, Suggestor};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
@@ -49,8 +49,8 @@ impl Suggestor for ModelTrainingAgent {
         !has_model_for_iteration(ctx, split.iteration)
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {

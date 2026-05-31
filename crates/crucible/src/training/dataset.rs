@@ -1,13 +1,16 @@
 // Copyright 2024-2026 Reflective Labs
 
-use converge_pack::{AgentEffect, Context, ContextKey, ProvenanceSource, Suggestor};
+use converge_pack::{AgentEffect, Context, ContextKey, Provenance, ProvenanceSource, Suggestor};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use crate::provenance::CRUCIBLE_PROVENANCE;
 
 use super::io::{download_dataset_if_missing, load_dataframe, write_parquet};
-use super::types::{DatasetSplit, TrainingPlan, diagnostic, has_split_for_iteration, proposal, read_latest_plan_from_ctx};
+use super::types::{
+    DatasetSplit, TrainingPlan, diagnostic, has_split_for_iteration, proposal,
+    read_latest_plan_from_ctx,
+};
 
 #[derive(Debug)]
 pub struct DatasetAgent {
@@ -55,8 +58,8 @@ impl Suggestor for DatasetAgent {
         !ctx.has(ContextKey::Signals)
     }
 
-    fn provenance(&self) -> &'static str {
-        CRUCIBLE_PROVENANCE.as_str()
+    fn provenance(&self) -> Provenance {
+        Provenance::from(CRUCIBLE_PROVENANCE.as_str())
     }
 
     async fn execute(&self, ctx: &dyn Context) -> AgentEffect {
@@ -182,4 +185,3 @@ mod tests {
         assert_eq!(infer, PathBuf::from("/tmp/data/infer.parquet"));
     }
 }
-
