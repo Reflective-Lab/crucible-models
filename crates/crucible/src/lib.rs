@@ -5,15 +5,16 @@
 //!
 //! Trained-model packs and the training pipeline for the Converge Engine.
 //!
-//! Unlike `prism-analytics` (closed-form, hand-authored inference), every
-//! model under `crucible-models` is learned from data using Burn as the
-//! training framework. Parameters are stored as trained artifacts, not
-//! hand-authored rules.
+//! Unlike `prism-analytics` (closed-form, hand-authored inference), Crucible
+//! models are learned from data using the training backend that fits the
+//! model family: Burn for differentiable packs and linfa for classical
+//! models such as trees and forests. Parameters are stored as trained
+//! artifacts, not hand-authored rules.
 //!
 //! ## Training pipeline
 //!
 //! The training pipeline lives in [`training`] and the supporting data
-//! plumbing in [`ingest`] and [`storage`]. The pipeline is composed of
+//! plumbing lives in [`ingest`]. The pipeline is composed of
 //! Suggestor-shaped agents (`DatasetAgent`, `DataValidationAgent`,
 //! `FeatureEngineeringAgent`, `HyperparameterSearchAgent`,
 //! `ModelTrainingAgent`, `ModelEvaluationAgent`, `ModelRegistryAgent`,

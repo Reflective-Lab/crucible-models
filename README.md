@@ -46,10 +46,8 @@ expert rules.
   `ModelEvaluationAgent`, `ModelRegistryAgent`, `MonitoringAgent`,
   `DeploymentAgent`, `SampleInferenceAgent`. Runs from a CLI today; lifts
   into a Formation when a real retrain trigger pulls.
-- **Data plumbing** in `crucible::ingest` (CSV / TSV / Parquet / Excel via
-  Polars) and `crucible::storage` (Polars ⇄ `converge-storage::ObjectStore`
-  bridge for `gs://`, `s3://`, `file://`, MinIO — behind the `storage`
-  feature).
+- **Data plumbing** in `crucible::ingest` for CSV, TSV, Parquet, and optional
+  Excel via Polars.
 - **`ClassifierModel` trait** — narrow contract (`train`, `n_classes`,
   `predict`, `predict_proba`, `save`, `load`) implemented by every
   fact-emitting classification pack.
@@ -101,21 +99,19 @@ for the order and rationale.
 ## Stack
 
 - **Burn 0.20** — autodiff, training, ndarray / GPU backends. Used for
-  ANFIS only.
+  differentiable packs such as ANFIS.
 - **linfa 0.8** + **linfa-trees 0.8** — tree ensembles, CART, SVMs. Pins
   ndarray 0.16; crucible uses ndarray 0.17 elsewhere and bridges at the
   linfa boundary via a renamed `ndarray-linfa` dep.
 - **Polars 0.51** — tabular ingestion and parquet I/O.
-- **converge-storage 3.8.1** — `ObjectStore` abstraction (feature-gated
-  `storage`).
-- **Converge 3.8.1** — pack and suggestor contracts.
+- **Converge 3.9.1** — pack and suggestor contracts.
 - MSRV 1.94.0 · Edition 2024 · `unsafe_code = "forbid"`
 
 ## Commands
 
 ```bash
 cargo build                                 # default build
-cargo build --features storage              # with ObjectStore bridge
+cargo build --features excel                # with Excel ingestion
 cargo test --all-features                   # full test suite
 cargo run --bin train_loan_default          # train and persist an RF
 cargo clippy --workspace --all-targets -- -D warnings

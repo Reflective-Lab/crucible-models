@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/crucible"]
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.94.0"
 license = "MIT"
@@ -11,8 +11,8 @@ repository = "https://github.com/Reflective-Lab/crucible-models"
 
 [workspace.dependencies]
 # Converge platform contracts
-converge-pack = "3.9.1"
-converge-optimization = "3.9.1"
+converge-pack = "3.9.2"
+converge-optimization = "3.9.2"
 
 # ML training frameworks
 # Burn: deep-learning / differentiable models (ANFIS).

@@ -21,7 +21,6 @@ crucible/
 ├── neuro_fuzzy/    ANFIS via Burn (planned — only Burn pack)
 ├── training/       Suggestor-shaped training pipeline agents
 ├── ingest/         multi-format dataset readers (CSV / TSV / Parquet / Excel)
-├── storage/        Polars ⇄ ObjectStore bridge (feature `storage`)
 ├── fixtures/       deterministic synthetic datasets for tests and CLIs
 ├── model/          `ClassifierModel` trait
 ├── suggestor/      generic `ClassifierSuggestor<M>` inference Suggestor
@@ -92,7 +91,7 @@ Each Suggestor:
 Today they run from a CLI; they lift into a Formation when a real
 retrain trigger pulls.
 
-- `DatasetAgent` — ingest labelled training data via the storage layer
+- `DatasetAgent` — ingest labelled training data via the ingest/file I/O layer
 - `DataValidationAgent` — quality checks
 - `FeatureEngineeringAgent` — feature-spec application
 - `HyperparameterSearchAgent` — hyperparameter sweep
@@ -121,8 +120,6 @@ Plus types: `TrainingPlan`, `DatasetSplit`, `HyperparameterSearchPlan`,
 ## Feature flags
 
 - `default` — minimal surface, no optional native deps.
-- `storage` — enables the `crucible::storage` module and pulls
-  `converge-storage`.
 - `excel` — enables Excel ingestion via `calamine`.
 
 ## CLI binaries
