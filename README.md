@@ -7,7 +7,7 @@
 [![Crates.io](https://img.shields.io/crates/v/converge-crucible-models.svg)](https://crates.io/crates/converge-crucible-models)
 [![docs.rs](https://docs.rs/converge-crucible-models/badge.svg)](https://docs.rs/converge-crucible-models)
 [![dependency status](https://deps.rs/repo/github/Reflective-Lab/crucible-models/status.svg)](https://deps.rs/repo/github/Reflective-Lab/crucible-models)
-![MSRV](https://img.shields.io/badge/MSRV-1.94.0-blue)
+![MSRV](https://img.shields.io/badge/MSRV-1.96.0-blue)
 <img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -105,7 +105,7 @@ for the order and rationale.
   linfa boundary via a renamed `ndarray-linfa` dep.
 - **Polars 0.51** — tabular ingestion and parquet I/O.
 - **Converge 3.9.1** — pack and suggestor contracts.
-- MSRV 1.94.0 · Edition 2024 · `unsafe_code = "forbid"`
+- MSRV 1.96.0 · Edition 2024 · `unsafe_code = "forbid"`
 
 ## Commands
 
