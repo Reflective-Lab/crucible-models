@@ -20,6 +20,6 @@ This extension targets:
 
 - Converge >= 3.9.1
 - Burn >= 0.20.0
-- MSRV 1.94.0
+- MSRV 1.96.0
 - Edition 2024
 - `unsafe_code = "forbid"`
