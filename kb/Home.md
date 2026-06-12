@@ -16,6 +16,7 @@ See `../prism-analytics` for deterministic, training-free inference packs.
 ## Navigation
 
 - [INDEX](INDEX.md) — entity catalog
+- [Positioning](Positioning.md) — elevator pitch, LLM synergy, full model catalog
 - [Architecture](Architecture/) — design decisions and boundaries
 - [Planning](Planning/MILESTONES.md) — roadmap
 - [LOG](LOG.md) — session log

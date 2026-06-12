@@ -5,6 +5,10 @@ source: llm
 
 Major entities in the `crucible-models` knowledge base.
 
+## Positioning
+
+- [Positioning](Positioning.md) — elevator pitch, LLM synergy, full model catalog
+
 ## Architecture
 
 - [Surface](Architecture/Surface.md) — public crate surface and contract shape
