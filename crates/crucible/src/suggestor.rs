@@ -140,7 +140,8 @@ impl<M: ClassifierModel + Send + Sync + 'static> Suggestor for ClassifierSuggest
             let payload =
                 ClassPredictionPayload::new(predicted, probs, self.model.execution_identity());
             let id = ProposalId::new(format!("{}-{}", self.suggestor_name, fact.id()));
-            let proposal = CRUCIBLE_PROVENANCE.proposed_fact(self.output_key, id, payload);
+            let proposal =
+                CRUCIBLE_PROVENANCE.proposed_fact_for(fact, self.output_key, id, payload);
             proposals.push(proposal);
         }
 
