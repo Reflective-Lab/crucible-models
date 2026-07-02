@@ -1,3 +1,6 @@
+> **Archived 2026-07-02** — active milestone tracking moved to Linear (Reflective team).
+> This file is kept for historical context only. Do not add new items here.
+
 ---
 source: human
 date: 2026-05-15
@@ -116,6 +119,7 @@ The remaining capability work is now ordered by which
 - **Kernel SVMs** — for small-feature, sharp-boundary problems.
 
 ## v1.0.0 — Release Checklist (open)
+**Epic:** E9
 
 - [ ] Second classifier family in production use (RF + one of GBT / DT
       / SVM exercised by an app).
