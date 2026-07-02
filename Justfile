@@ -1,15 +1,17 @@
 default:
     just --list
 
+# Canonical CI aggregate (RP-CI-PARITY): CI runs exactly `just ci`.
+ci: fmt-check check lint test
+
 build:
     cargo build
 
 test:
-    cargo test
+    cargo test --workspace --all-targets
 
 lint:
-    just fmt-check
-    just clippy
+    cargo clippy --workspace --all-targets -- -D warnings
 
 fmt:
     cargo fmt
@@ -21,7 +23,7 @@ clippy:
     cargo clippy --workspace --all-targets -- -D warnings
 
 check:
-    cargo check
+    cargo check --workspace --all-targets
 
 security-audit:
     cargo audit --deny warnings \
@@ -105,5 +107,6 @@ release-check:
     just coverage
     PERF_BASELINE="v$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.*)".*/\1/')" just performance-profile
     SOAK_DURATION_MIN=5 just soak
+    just fmt-check
     just lint
     cargo test --workspace

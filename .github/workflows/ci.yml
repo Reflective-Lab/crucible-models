@@ -1,71 +1,35 @@
 name: CI
 
+# Canonical RP-CI-PARITY shape (KB/05-engineering/standards/ci-parity.md
+# in the root repo). Thin runner around `just ci`. To add or modify a
+# check, edit the Justfile — never add checks here.
+
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   RUST_VERSION: "1.96.0"
 
+permissions:
+  contents: read
+
 jobs:
-  check:
-    name: Check
+  ci:
+    name: just ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Checkout Reflective sibling dependencies
         run: bash scripts/ci/checkout-reflective-siblings.sh
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
+          components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Check workspace
-        run: cargo check --workspace --all-targets
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: check
-    steps:
-      - uses: actions/checkout@v5
-      - name: Checkout Reflective sibling dependencies
-        run: bash scripts/ci/checkout-reflective-siblings.sh
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-      - uses: Swatinem/rust-cache@v2
-      - name: Run tests
-        run: cargo test --workspace --all-targets
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    needs: check
-    steps:
-      - uses: actions/checkout@v5
-      - name: Checkout Reflective sibling dependencies
-        run: bash scripts/ci/checkout-reflective-siblings.sh
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
-
-  format:
-    name: Format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Checkout Reflective sibling dependencies
-        run: bash scripts/ci/checkout-reflective-siblings.sh
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          components: rustfmt
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - uses: extractions/setup-just@v3
+      - run: just ci
